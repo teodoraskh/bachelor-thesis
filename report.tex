@@ -1,0 +1,203 @@
+\documentclass[11pt,titlepage=false]{scrreprt}
+
+% Style settings
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\addtokomafont{disposition}{\rmfamily}
+
+% Hack chapter layout - don't use in other papers!
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\scr@startchapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
+\makeatother
+
+% Useful packages for complex content:
+\usepackage{amsmath,amsfonts,amssymb} % typesetting math
+%\usepackage{siunitx}                 % typesetting SI-units and formatted numbers
+%\usepackage{listings}                % typesetting source code
+%\usepackage{booktabs,multirow}       % utils for complex/beautiful tables
+%\usepackage{subcaption}              % placing multiple subfigures in a figure
+
+% Bibliography, referencing, and indexing
+\usepackage{csquotes}                 % typesetting \enquote{text in quotes} correctly
+\usepackage[backend=biber,
+            style=alphabetic,
+            minalphanames=3, maxalphanames=4,
+            maxbibnames=20]{biblatex} % to generate the bibliography
+\addbibresource{report.bib}           % name of the bib-file
+
+% Useful utils:
+%\usepackage{todonotes}               % add ToDo markers (\todo{...})
+\usepackage[hidelinks]{hyperref}      % clickable links (but hide color frames around links)
+%\usepackage{cleveref}                % named references (\Cref{chap:introduction}, ...)
+
+
+\begin{document}
+
+%--- FRONT MATTER --------------------------------------------------------------
+
+\title{Title of the Report}
+\author{Firstname Lastname}
+\date{Introduction to Scientific Working 2021/22\bigskip\bigskip}%\today
+\publishers{\normalsize
+  Supervisor:
+  Firstname Lastname
+  \medskip\par
+  Institute of Applied Information Processing and Communications\\
+  Graz University of Technology
+}
+
+
+\maketitle
+
+\chapter*{\centering\Large Abstract}
+
+Provide an abstract of your report (at most $\frac{1}{2}$ page for this report, typically 1 to 3 paragraphs).
+
+The abstract usually consists of two main parts: a motivational background and your contribution.
+Start with a few sentences of general introduction and background information to motivate your main research question/challenge.
+Then, summarize what your paper contributes and describe its (potential) impact.
+This includes a very short summary of all your important results and core performance numbers that characterize your approach/attack/countermeasure/implementation.
+Finally, summarize any key conclusions and calls to action that you have, e.g., apply the idea more broadly, get rid of some technology, find a countermeasure, or similar.
+
+\paragraph{Keywords:}
+Broad keyword $\cdot$
+Keyword $\cdot$
+Specific keyword $\cdot$
+Another specific keyword
+
+\clearpage
+
+
+%--- INTRODUCTION --------------------------------------------------------------
+
+\chapter{Introduction}
+\label{chap:introduction}
+
+Provide an introduction to your work (typically 1 to 2 pages, but can also be more for your full thesis).
+For this short ISW report, focus on \textbf{Introduction + Background + Conclusion} and cover them it at least \textbf{4 pages} (excluding the titlepage/abstract and bibliography).
+
+The introduction is structured like a longer version of the abstract.
+You start with a paragraph or two of general background, getting more and more specific, and culminating in a clear motivation for your main research problem or thesis goal.
+This should be a convincing and well-founded story: Readers will stop reading here if they do not see the relevance of your work for them.
+If you have a central research question, state it clearly.
+If there are particular papers relevant to your work, such as central techniques you used, designs you built on or evaluated, or similar, be sure to include citations here.
+
+Then, provide a summary and relevant details to characterize your contribution and approach for solving the research problem.
+The introduction is generally written in present tense and active form -- everything happens now and is done by ``we'', the author(s):
+``We provide an implementation'', ``We discuss'', ``We evaluate'', etc.
+The focus is on your final \emph{outcome} and gained insights, not on your personal journey to get there; for example, do include facts like the runtime of your implementation if it is relevant for judging its performance, but do not include how many months it took you to produce this implementation.
+Provide a concise summary of your approach and your main findings, including all details already given in the Abstract and some more details.
+This includes a clear definition of the scope of your work and your assumptions, such as your attacker model, hardware/software used, and similar.
+There should be no big (positive or negative) surprises on your results for the reader in the remaining paper, except for technical details on \emph{how} you achieved your results.
+If there is a useful central figure that helps explain and contextualize your contribution, or a summary table that compares your contribution with related work, you can add it here.
+Finish this part with a (bulleted) list of around 3 to 5 main scientific contributions, such as new ideas and techniques, applications of techniques to new application areas, novel implementation results, performance numbers, and similar.
+
+At some point in your thesis, you need to discuss relevant related work.
+Depending on what your work contributes, a good spot for this discussion can be in the \emph{Introduction}, in the \emph{Background} section, or in a final \emph{Discussion} section.
+
+\paragraph{Outline.}
+The introduction ends with an outline (aka mapping), explaining how this paper is structured:
+In Section \ref{chap:background}, we introduce the relevant background on some topic.
+(\dots)
+Finally, in Section \ref{chap:conclusion}, we conclude with a discussion of our findings and directions for future work.
+
+
+%--- BACKGROUND ----------------------------------------------------------------
+
+\chapter{Background}
+\label{chap:background}
+
+Every chapter starts with an introductory paragraph that outlines the contents and purpose of the chapter:
+
+In this chapter, we provide some usage examples for
+glossaries and acronym lists with \texttt{glossaries} (Section \ref{sec:gloss}),
+bibliography and citations with \texttt{biblatex} (Section \ref{sec:bib}), and more.
+
+\section{Notation and Acronyms}
+\label{sec:gloss}
+
+Symbols and acronyms are defined in the preamble, after loading the \texttt{glossaries} package, and used as follows.
+
+In this chapter, we introduce the necessary background on the \gls{aes}.
+We denote binary exclusive-or by \gls{xor}.
+
+\section{Citations}
+\label{sec:bib}
+
+This is an example of how to specify and cite
+a book \cite{AESbook},
+a journal article \cite{bstjShannon49},
+a conference article \cite{spKocherHFGGHHLM019},
+an informal report \cite{iacrSchneierFKR15},
+and a website \cite{webIAIK21}.
+We can also add the authors' names to the citation:
+\Gls{aes} is a block cipher defined by \textcite{AESbook}.
+
+\section{Writing Style}
+\label{sec:hints}
+
+Writing style recommendations for English differ a bit from German:
+\begin{itemize}
+  \item Prefer short, clear sentences over long, convoluted sentences.
+  \item Prefer active voice, well-defined subjects, and meaningful verbs over passive voice, vague subjects, and vague verbs.
+  \item Do not concatenate too many nouns.
+  \item When you refer to the same thing several times consecutively, call it by the same name instead of inventing synonyms. (``Wortwiederholung'' is ok.)
+\end{itemize}
+Consider using a style checker such as Grammarly -- ask your supervisor for details.
+
+Rules for placing commas in English are quite easy, but also quite different from German.
+The most important ones include:
+\begin{itemize}
+  \item No comma before ``that'': ``Due to the fact that\dots''
+  \item No comma before infinitives: ``We did this to find out\dots''
+  \item No comma between subject and verb (be careful not to confuse with introductory clauses): ``Completing the list is essential.''
+  \item No comma before indispensable relative clauses: ``The function returns the key which has the highest score.''
+  \item Put a comma before and after dispensable relative clauses and other non-essential phrases: ``The key, which consists of two subkeys, is generated\dots''
+  \item Put a comma after introductory clauses: ``Consequently, we use\dots''; ``After the last step, we return\dots''; ``To complete the list, we add\dots''.
+  \item Put a comma before and after ``e.g.'' and ``i.e.'': ``A block cipher, e.g., AES.''
+    Consider using ``for example/for instance/such as'' and ``that is'' instead.
+  \item Many authors put a comma before ``and, but, for, or, nor, so, yet'' when they connect two independent clauses: ``We repeated the experiment, but the result was different.''
+    This is a matter of (your or your supervisor's) preference.
+  \item Many authors put a comma before ``and, or'' in the last element of an enumeration of three or more elements: ``Alice and Bob'', but ``Alice, Bob, and Caesar.''
+    This ``Oxford comma'' is a matter of (your or your supervisor's) preference.
+\end{itemize}
+
+Typesetting and other hints:
+\begin{itemize}
+  \item To typeset English `single' and ``double'' quotation marks in \LaTeX, start with \verb|`| (grave accent) and end with \verb|'| (typewriter apostrophe).
+  \item Display math formulas should be introduced in the previous sentence and include punctuation (optionally separated by a thin space \verb|\,|): The ciphertext is computed as
+    \[C = E_K(P)\,.\]
+  \item Captions are usually above tables, but below figures, and end with a full stop.
+  \item ``128 bits'', but ``128-bit key''.
+  \item References are typically capitalized and separated by a non-breaking space \verb|~|: ``Section~\ref{sec:bib}''.
+    Try \verb|\autoref| (\autoref{sec:bib}) or the \verb|cleveref| package. % \Cref{sec:bib}
+\end{itemize}
+
+
+%--- CONCLUSION ----------------------------------------------------------------
+
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+Provide the conclusions of your short report (max. $\frac{1}{2}$ page).
+
+This is again structured somewhat similarly to the abstract and introduction.
+However, unlike the abstract, it can be partially written in past tense (for actions you performed and results that you found) as well as future tense or conditional (for predictions what the impact of your work will be, which future work could/should be done).
+
+Start by briefly recalling the main motivation and main goal of your work.
+Repeat the main hard facts, performance numbers, and properties of your solution/work.
+
+Emphasize your main insights, findings, and lessons learned.
+If you do not have a dedicated discussion section, you can discuss your findings and put them into perspective.
+If you have any recommendations that follow from your work, phrase them here.
+
+Finally, you can point out open problems or remaining issues that call for future work, but phrase this in a positive way -- as opportunities.
+There should be no complete surprises (such as significant shortcomings not discussed earlier) here, but you can provide some new thoughts and ideas.
+
+
+%--- BIBLIOGRAPHY --------------------------------------------------------------
+
+\printbibliography
+
+\end{document}
