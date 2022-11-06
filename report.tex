@@ -10,9 +10,7 @@
 
 % Hack chapter layout - don't use in other papers!
 \usepackage{etoolbox}
-\makeatletter
-\patchcmd{\scr@startchapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
-\makeatother
+\makeatletter\patchcmd{\scr@startchapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}\makeatother
 
 % Useful packages for complex content:
 \usepackage{amsmath,amsfonts,amssymb} % typesetting math
@@ -30,7 +28,7 @@
 \addbibresource{report.bib}           % name of the bib-file
 
 % Useful utils:
-%\usepackage{todonotes}               % add ToDo markers (\todo{...})
+%\usepackage{todonotes}               % add ToDo markers (\todo{...}, \todo[inline]{...})
 \usepackage[hidelinks]{hyperref}      % clickable links (but hide color frames around links)
 %\usepackage{cleveref}                % named references (\Cref{chap:introduction}, ...)
 
@@ -41,7 +39,7 @@
 
 \title{Title of the Report}
 \author{Firstname Lastname}
-\date{Introduction to Scientific Working 2021/22\bigskip\bigskip}%\today
+\date{Introduction to Scientific Working 2022/23\bigskip\bigskip}
 \publishers{\normalsize
   Supervisor:
   Firstname Lastname

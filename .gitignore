@@ -1,0 +1,17 @@
+# TeX temporary files
+*.log
+*.aux
+*.bbl
+*.blg
+*.toc
+*.out
+*.nav
+*.snm
+*.vrb
+*.synctex.gz
+*.bcf
+*.fdb_latexmk
+*.fls
+*.run.xml
+report.pdf
+
