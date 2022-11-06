@@ -18,6 +18,8 @@
 %\usepackage{listings}                % typesetting source code
 %\usepackage{booktabs,multirow}       % utils for complex/beautiful tables
 %\usepackage{subcaption}              % placing multiple subfigures in a figure
+%\usepackage{graphicx}                % including external image files
+%\usepackage{tikz}                    % drawing figures within LaTeX
 
 % Bibliography, referencing, and indexing
 \usepackage{csquotes}                 % typesetting \enquote{text in quotes} correctly
@@ -31,6 +33,9 @@
 %\usepackage{todonotes}               % add ToDo markers (\todo{...}, \todo[inline]{...})
 \usepackage[hidelinks]{hyperref}      % clickable links (but hide color frames around links)
 %\usepackage{cleveref}                % named references (\Cref{chap:introduction}, ...)
+
+% Your own macros:
+%\newcommand{\mynewmacro}[1]{my content with one input parameter: #1}
 
 
 \begin{document}
@@ -160,10 +165,31 @@ Typesetting and other hints:
   \item Display math formulas should be introduced in the previous sentence and include punctuation (optionally separated by a thin space \verb|\,|): The ciphertext is computed as
     \[C = E_K(P)\,.\]
   \item Captions are usually above tables, but below figures, and end with a full stop.
-  \item ``128 bits'', but ``128-bit key''.
+  \item ``This key has 128 bits'', but ``128-bit key''.
   \item References are typically capitalized and separated by a non-breaking space \verb|~|: ``Section~\ref{sec:bib}''.
     Try \verb|\autoref| (\autoref{sec:bib}) or the \verb|cleveref| package. % \Cref{sec:bib}
 \end{itemize}
+
+Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
+
+\begin{figure}[htpb]
+  \centering
+  %\includegraphics[width=.5\textwidth]{figures/myimage.png}
+  \caption{Concise descriptive caption for the figure.}
+  \label{fig:diagram}
+\end{figure}
+
+\begin{table}
+  \centering
+  \begin{tabular}{lll}
+    \hline
+    First  & Second & Third \\
+    Fourth & Fifth  & Sixth \\
+    \hline
+  \end{tabular}
+  \caption{Concise descriptive caption for the table.}
+  \label{tab:data}
+\end{table}
 
 
 %--- CONCLUSION ----------------------------------------------------------------
