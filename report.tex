@@ -16,7 +16,7 @@
 \usepackage{amsmath,amsfonts,amssymb} % typesetting math
 %\usepackage{siunitx}                 % typesetting SI-units and formatted numbers
 %\usepackage{listings}                % typesetting source code
-%\usepackage{booktabs,multirow}       % utils for complex/beautiful tables
+\usepackage{booktabs,multirow}        % utils for complex/beautiful tables
 %\usepackage{subcaption}              % placing multiple subfigures in a figure
 %\usepackage{graphicx}                % including external image files
 %\usepackage{tikz}                    % drawing figures within LaTeX
@@ -162,7 +162,7 @@ The most important ones include:
 Typesetting and other hints:
 \begin{itemize}
   \item To typeset English `single' and ``double'' quotation marks in \LaTeX, start with \verb|`| (grave accent) and end with \verb|'| (typewriter apostrophe).
-  \item Display math formulas should be introduced in the previous sentence and include punctuation (optionally separated by a thin space \verb|\,|): The ciphertext is computed as
+  \item Display math formulas are introduced in the previous sentence and include punctuation (often separated by a thin space \verb|\,|): The ciphertext is computed as
     \[C = E_K(P)\,.\]
   \item Captions are usually above tables, but below figures, and end with a full stop.
   \item ``This key has 128 bits'', but ``128-bit key''.
@@ -175,20 +175,24 @@ Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
 \begin{figure}[htpb]
   \centering
   %\includegraphics[width=.5\textwidth]{figures/myimage.png}
-  \caption{Concise descriptive caption for the figure.}
+  \caption{Concise descriptive caption for the figure (printed below the figure).}
   \label{fig:diagram}
 \end{figure}
 
-\begin{table}
-  \centering
-  \begin{tabular}{lll}
-    \hline
-    First  & Second & Third \\
-    Fourth & Fifth  & Sixth \\
-    \hline
-  \end{tabular}
-  \caption{Concise descriptive caption for the table.}
+\begin{table}[b]
+  \caption{Concise descriptive caption for the table (printed above the table).}
   \label{tab:data}
+  \centering
+  \begin{tabular}{lrr} % text columns: {l}eft-aligned, number columns: {r}ight-aligned
+    \toprule
+    Item   & \multicolumn{2}{c}{Properties} \\
+             \cmidrule{2-3}
+           & First          & Second \\
+    \midrule
+    Apple  & 5              & 100 \\
+    Pear   & 10             & 99 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 
@@ -199,18 +203,17 @@ Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
 
 Provide the conclusions of your short report (max. $\frac{1}{2}$ page).
 
-This is again structured somewhat similarly to the abstract and introduction.
-However, unlike the abstract, it can be partially written in past tense (for actions you performed and results that you found) as well as future tense or conditional (for predictions what the impact of your work will be, which future work could/should be done).
-
+This is structured similarly to the abstract and introduction.
+However, unlike the abstract, it can be partially written in past tense (for actions you performed and results that you found) as well as future tense or conditional (for predictions what the impact of your work will be).
 Start by briefly recalling the main motivation and main goal of your work.
 Repeat the main hard facts, performance numbers, and properties of your solution/work.
-
+%
 Emphasize your main insights, findings, and lessons learned.
 If you do not have a dedicated discussion section, you can discuss your findings and put them into perspective.
-If you have any recommendations that follow from your work, phrase them here.
+If you have any recommendations based on your work, phrase them here.
 
-Finally, you can point out open problems or remaining issues that call for future work, but phrase this in a positive way -- as opportunities.
-There should be no complete surprises (such as significant shortcomings not discussed earlier) here, but you can provide some new thoughts and ideas.
+Finally, you can point out open problems that call for future work, but phrased in a positive way -- as opportunities.
+There should be no complete surprises (such as significant shortcomings not discussed earlier), but you can provide some new thoughts and ideas.
 
 
 %--- BIBLIOGRAPHY --------------------------------------------------------------
