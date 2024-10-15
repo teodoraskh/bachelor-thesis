@@ -1,5 +1,6 @@
 \documentclass[11pt,
   titlepage=false,
+  abstract=on,
   %parskip=half,      % enable if you want paragraphs separated by vertical spacing instead of indents
 ]{scrreprt}
 
@@ -7,10 +8,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \addtokomafont{disposition}{\rmfamily}
-
-% Hack chapter layout - don't use in other papers!
-\usepackage{etoolbox}
-\makeatletter\patchcmd{\scr@startchapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}\makeatother
+\renewcommand*\thesection{\arabic{section}}
 
 % Useful packages for complex content:
 \usepackage{amsmath,amsfonts,amssymb} % typesetting math
@@ -32,7 +30,7 @@
 % Useful utils:
 %\usepackage{todonotes}               % add ToDo markers (\todo{...}, \todo[inline]{...})
 \usepackage[hidelinks]{hyperref}      % clickable links (but hide color frames around links)
-%\usepackage{cleveref}                % named references (\Cref{chap:introduction}, ...)
+%\usepackage{cleveref}                % named references (\Cref{sec:introduction}, ...)
 
 % Your own macros:
 %\newcommand{\mynewmacro}[1]{my content with one input parameter: #1}
@@ -44,7 +42,7 @@
 
 \title{Title of the Report}
 \author{Firstname Lastname}
-\date{Introduction to Scientific Working 2022/23\bigskip\bigskip}
+\date{Introduction to Scientific Working 2024/25\bigskip\bigskip}
 \publishers{\normalsize
   Supervisor:
   Firstname Lastname
@@ -53,11 +51,10 @@
   Graz University of Technology
 }
 
-
 \maketitle
 
-\chapter*{\centering\Large Abstract}
 
+\begin{abstract}\noindent
 Provide an abstract of your report (at most $\frac{1}{2}$ page for this report, typically 1 to 3 paragraphs).
 
 The abstract usually consists of two main parts: a motivational background and your contribution.
@@ -66,19 +63,20 @@ Then, summarize what your paper contributes and describe its (potential) impact.
 This includes a very short summary of all your important results and core performance numbers that characterize your approach/attack/countermeasure/implementation.
 Finally, summarize any key conclusions and calls to action that you have, e.g., apply the idea more broadly, get rid of some technology, find a countermeasure, or similar.
 
-\paragraph{Keywords:}
+
+\paragraph*{Keywords:}
 Broad keyword $\cdot$
-Keyword $\cdot$
 Specific keyword $\cdot$
 Another specific keyword
+\end{abstract}
 
 \clearpage
 
 
 %--- INTRODUCTION --------------------------------------------------------------
 
-\chapter{Introduction}
-\label{chap:introduction}
+\section{Introduction}
+\label{sec:introduction}
 
 Provide an introduction to your work (typically 1 to 2 pages, but can also be more for your full thesis).
 For this short ISW report, focus on \textbf{Introduction + Background + Conclusion} and cover them it at least \textbf{4 pages} (excluding the titlepage/abstract and bibliography).
@@ -104,22 +102,22 @@ Depending on what your work contributes, a good spot for this discussion can be 
 
 \paragraph{Outline.}
 The introduction ends with an outline (aka mapping), explaining how this paper is structured:
-In Section \ref{chap:background}, we introduce the relevant background on some topic.
+In Section \ref{sec:background}, we introduce the relevant background on some topic.
 (\dots)
-Finally, in Section \ref{chap:conclusion}, we conclude with a discussion of our findings and directions for future work.
+Finally, in Section \ref{sec:conclusion}, we conclude with a discussion of our findings and directions for future work.
 
 
 %--- BACKGROUND ----------------------------------------------------------------
 
-\chapter{Background}
-\label{chap:background}
+\section{Background}
+\label{sec:background}
 
-Every chapter starts with an introductory paragraph that outlines the contents and purpose of the chapter:
+Every section starts with an introductory paragraph that outlines the contents and purpose of the section:
 
-In this chapter, we provide some usage examples for bibliography and citations with \texttt{biblatex} (Section \ref{sec:bib}) and writing tips (Section \ref{sec:hints}).
+In this section, we provide some usage examples for bibliography and citations with \texttt{biblatex} (Section \ref{subsec:bib}) and writing tips (Section \ref{subsec:hints}).
 
-\section{Citations}
-\label{sec:bib}
+\subsection{Citations}
+\label{subsec:bib}
 
 This is an example of how to specify and cite
 a book \cite{AESbook},
@@ -130,8 +128,8 @@ and a website \cite{webIAIK21}.
 We can also add the authors' names to the citation:
 AES is a block cipher defined by \textcite{AESbook}.
 
-\section{Writing Style}
-\label{sec:hints}
+\subsection{Writing Style}
+\label{subsec:hints}
 
 Writing style recommendations for English differ a bit from German:
 \begin{itemize}
@@ -166,8 +164,8 @@ Typesetting and other hints:
     \[C = E_K(P)\,.\]
   \item Captions are usually above tables, but below figures, and end with a full stop.
   \item ``This key has 128 bits'', but ``128-bit key''.
-  \item References are typically capitalized and separated by a non-breaking space \verb|~|: ``Section~\ref{sec:bib}''.
-    Try \verb|\autoref| (\autoref{sec:bib}) or the \verb|cleveref| package. % \Cref{sec:bib}
+  \item References are typically capitalized and separated by a non-breaking space \verb|~|: ``Section~\ref{subsec:bib}''.
+    Try \verb|\autoref| (\autoref{subsec:bib}) or the \verb|cleveref| package. % \Cref{sec:bib}
 \end{itemize}
 
 Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
@@ -198,8 +196,8 @@ Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
 
 %--- CONCLUSION ----------------------------------------------------------------
 
-\chapter{Conclusion}
-\label{chap:conclusion}
+\section{Conclusion}
+\label{sec:conclusion}
 
 Provide the conclusions of your short report (max. $\frac{1}{2}$ page).
 
@@ -218,6 +216,6 @@ There should be no complete surprises (such as significant shortcomings not disc
 
 %--- BIBLIOGRAPHY --------------------------------------------------------------
 
-\printbibliography
+\printbibliography[heading=subbibliography]
 
 \end{document}
