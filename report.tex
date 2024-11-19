@@ -57,13 +57,12 @@
 
 
 \begin{abstract}\noindent
-Lattice-based cryptography is the backbone for an entire class of systems offering post-quantum security. (\texttt{But you are talking about PQC AND FHE in this paper. You cannot only mention PQC!!!})\\
+Lattice-based cryptography is the backbone for an entire class of systems offering post-quantum security.\\
 Many of these cryptosystems require rigorous mathematical approaches for laying the foundation of security, especially in the case of 
 post-quantum computing or fully-homomorphic encryption schemes. A well-known NP-hard problem that is fundamental for both previously mentioned algorithms
 is Ring Learning with Errors, which uses polynomial arithmetic. In several cases, if these polynomials are small and a naive computational method is used,
 the performance costs will also be minimal. However, the higher the polynomial degree, the higher the need for optimization becomes.\\
-To solve this problem, the concept of modular multiplication has been introduced, where each coefficient in the polynomial result needs to be reduced modulo
-q in order to reduce the coefficients. Thus, modular multiplication is the most fundamental resource in cryptographic schemes. This arithmetic operation, 
+To solve this problem, the concept of modular multiplication has been applied, where each coefficient in the polynomial result needs to be reduced modulo $q$ in order to reduce the coefficients. Thus, modular multiplication is the most fundamental resource in cryptographic schemes. This arithmetic operation, 
 if performed efficiently, can bring a significant impact over the performance of lattice-based cryptographic implementations.\\
 In this work, we address the problem of efficiency in terms of area and power consumption on digital platforms such as FPGA/ASIC
 and analyze three well-known modular multipliers for evaluation: Montgomery Reduction, Barret's Reduction and Add \& Shift. Furthermore, we seek to distinguish between two novel usecases of lattice-based cryptography,
@@ -94,29 +93,52 @@ ASIC
 
 \section{Introduction}
 \label{sec:introduction}
+% To further explore the intricacies of these cryptographic schemes, 
+% In asymmetric cryptography, ensuring that the private key remains secret under any circumstances is crucial. (\texttt{not entirely sure about this, 
+% there's no punchline and it doesn't catch the attention of the reader. for sure an actual scientific question must be stated.})
 
-In asymmetric cryptography, ensuring that the private key remains secret under any circumstances is crucial. (\texttt{not entirely sure about this, 
-there's no punchline and it doesn't catch the attention of the reader. for sure an actual scientific question must be stated.})
-Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee this.
-In 2005, the Learning with Errors problem was published by Oded Regev \cite{regev2010learning}, that with time became a standard for cryptographic constructions. This
-problem has become the basis of many encryption algorithms due to the fact that it is as hard as approximate lattice problems in the worst case \cite{micciancio2013hardness}.\\
+Lattice-based constructions have gained notoriety in recent times due to their complexity, a characteristic that correlates with enhanced security.
+As the need for secure and lightweight lattice-based algorithms increases, their complexity is also an aspect that requires intensive study, especially
+in the context of platforms like FPGA or ASIC, where area and power are limited resources.
+At the heart of many lattice-based constructions lies polynomial multiplication, which is the basic and most computationally intensive operation in 
+Ring Learning with Errors cryptosystems. One crucial aspect of polynomial multiplication in lattice-based cryptography is modular multiplication, which 
+ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial security properties. However, the higher the security 
+degree, the more convoluted these operations become. To further mitigate these potential losses, we need to firstly understand the complexity of the operations
+performed within these methods.
+
+\{ \texttt{I think that 90 \% of the follwing paragraphs need to be moved into the background section because there's too many details}\}
+Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee security within a certain standard.\\
+After 2005, the Learning with Errors problem published by Oded Regev \cite{regev2010learning} became a standard for cryptographic constructions due the strict security requirements it enforces.
+A study made by Micciancio \& Peikert proves its hardness to resemble the norms of approximate lattice problems in the worst case \cite{micciancio2013hardness}.
 % It assumes a set of random linear equations over a secret vector $\textbf{s}$. Each equation is of form $\textbf{a} \cdot \textbf{s} + e$, where $\textbf{a}$ is the public
 % vector, $\textbf{s}$ is the secret vector and $e$ is the error term drawn from a Gaussian distribution.
 % While it may be possible to have access to $\textbf{s}$ with the multiplication between $\textbf{a}$ and $\textbf{s}$ alone, the error term makes it computationally 
 % infeasible to recover the secret $\textbf{s}$ for appropriate parameters.\\
-The original problem states that a secret vector $\textbf{s}$ from a \textit{'noisy'} system of linear equations of type $\textbf{a} \cdot \textbf{s} + e$ should be retrieved, where $\textbf{a}$ is the public
+\texttt{I think that the following block of text is too much into detail and could be``abstracted''}
+\{The original problem states that a secret vector $\textbf{s}$ from a \textit{'noisy'} system of linear equations of type $\textbf{a} \cdot \textbf{s} + e$ should be retrieved, where $\textbf{a}$ is the public
 vector drawn uniformly at random and $\textbf{e}$ is the error term or the $noise$, drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
 by performing Gaussian decomposition over the system of equations, the addition of the noise term makes it computationally infeasible to retrieve the
-secret for appropriate parameters.\\
+secret for appropriate parameters.\} Thus, the main challenge that the attacker faces is distinguishing ``random noisy equations'' from truly uniform ones.
+
 % from $\textbf{a} \cdot \textbf{s}$ alone 
-Nevertheless, cryptographic schemes based on \gls{LWE} tend to require large key sizes. This highly depends on the desired security level \textit{n} which also determines the "hardness" \cite{micciancio2013hardness}. 
+Nevertheless, 
+% cryptographic schemes based on \gls{LWE} tend to require large key sizes. 
+this highly depends on the desired security level \textit{n} which also determines the ``hardness'' \cite{micciancio2013hardness}. 
 Cryptographic applications often need at least  $n$ vectors $\textbf{a}_1,\ldots,\textbf{a}_n$, which leads to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
-security level increases. A solution to this issue is the Ring Learning with Errors problem,  which was introduced along with the initial LWE problem.\\
-Ring Learning with Errors suggests a more efficient and secure approach in implementing encryption algorithms by introducing the ring structure over a finite field of moduli and by introducing polynomial representation 
-of public and private keys. With that being said, using polynomials within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.\\
-Lattice-based applications such as Quantum-Safe Schemes and Fully-Homomorphic Encryption make use of the polynomial representation excessively in expressing asymmetric designs. However, polynomial
-multiplication is an expensive operation, especially in the context of devices with limited resources such as FPGA or ASIC. The basic encryption operations require a set of RLWE parameters which define the computational properties
-of the ring structure and determine the level of security (i.e. polynomial degree). Even though the security level can be optimized, the lowest acceptable security level still yields a large ring object, of the order of millions of bits. (add reference here)
+security level increases, which makes the problem inefficient for practical cryptographic applications. A solution to this issue is tightly related to the NTRU problem, which is based on the mathematical structure of
+polynomials over rings. The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Lyubashevsky as an optimization of the initial LWE problem.
+
+Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the heuristic design of the NTRU cryptosystem, the ring structure over a finite field of moduli, over the polynomial representation 
+of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.
+However, if we were to naively multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
+problem, the computations become highly convoluted. \texttt{(the following sentences are just placeholders for now)} For this reason, more advanced modular multiplication methods have been introduced: Montgomery Reduction, Barrett Reduction. 
+\paragraph{Our contributions: }In this paper, we want to explore these algorithms, while aiming to create an evaluation of each and every one of them in different scenarios within lattice-based cryptographic methods.
+% , which facilitates
+% the usage of RLWE in complex lattice-based applications such as Quantum-Safe Cryptographic Schemes and Fully-Homomorphic Encryption.
+
+% Lattice-based applications such as Quantum-Safe Schemes and Fully-Homomorphic Encryption make use of the polynomial representation within the ring for expressing asymmetric designs. H
+% However, polynomial multiplication is still an expensive operation, especially in the context of devices with limited resources such as FPGA or ASIC. The basic encryption operations require a set of RLWE parameters which define the computational properties
+% of the ring structure and determine the level of security (i.e. polynomial degree). Even though the security level can be optimized, the lowest acceptable security level still yields a large ring object, of the order of millions of bits. (add reference here)
 % The ring structure not only reinforces the "hardness" of 
 % the initial problem, but also allows for operations on encrypted data to be performed. Both of these features facilitate the implementation of post-quantum cryptographic
 % algorithms and fully-homomorphic encryption schemes.
@@ -158,6 +180,23 @@ of the ring structure and determine the level of security (i.e. polynomial degre
 
 \section{Background}
 \label{sec:background}
+
+\subsection{Notation}
+We use $\mathbb{Z}_q$ to represent the set of integers modulo $q$. We represent the set of $n$-dimensional vectors with $\mathbb{Z}^n_q$
+\subsection{Learning with Errors}
+\paragraph{Output}
+We denote the Learning with Errors problem as following: $(\mathbf{a}, \langle \mathbf{a}, \mathbf{s} \rangle + e)$, where $\mathbf{a}$ is
+drawn uniformly at random from $\mathbb{Z}^n_q$. The goal is to retrieve the secret vector $\mathbf{s} \in \mathbb{Z}^n_q$ given an error term
+$e$ drawn from an error 
+
+\subsection{NTRU}
+\subsection{Ring Learning with Errors}
+\subsection{Polynomial multiplication}
+\subsection{Modular multiplication}
+\subsection{Montgomery Reduction}
+\subsection{Barrett Reduction}
+\subsection{Add \& Shift}
+% Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
 
 % Every section starts with an introductory paragraph that outlines the contents and purpose of the section:
 
