@@ -47,7 +47,7 @@
 \date{Introduction to Scientific Working 2024/25\bigskip\bigskip}
 \publishers{\normalsize
   Supervisor:
-  Aikata
+  Aikata Aikata
   \medskip\par
   Institute of Applied Information Processing and Communications\\
   Graz University of Technology
@@ -65,7 +65,7 @@ the performance costs will also be minimal. However, the higher the polynomial d
 To solve this problem, the concept of modular multiplication has been applied, where each coefficient in the polynomial result needs to be reduced modulo a quotient $q$ in order to reduce the coefficients. Thus, modular multiplication is the most fundamental resource in cryptographic schemes. This arithmetic operation, 
 if performed efficiently, can bring a significant impact over the performance of lattice-based cryptographic implementations.\\
 In this work, we address the problem of efficiency in terms of area and power consumption on digital platforms such as FPGA/ASIC
-and analyze three well-known modular multipliers for evaluation: Montgomery Reduction, Barret's Reduction and Add \& Shift. Furthermore, we seek to distinguish between two novel usecases of lattice-based cryptography,
+and analyze three well-known modular multipliers for evaluation: Montgomery Reduction, Barret's Reduction and Shift \& Add. Furthermore, we seek to distinguish between two novel usecases of lattice-based cryptography,
 namely Post-Quantum Cryptography and Fully-Homomorphic Encryption, based on how they utilize the NP-Hard Ring Learning with Errors problem.
 
 % Provide an abstract of your report (at most $\frac{1}{2}$ page for this report, typically 1 to 3 paragraphs).
@@ -97,7 +97,7 @@ ASIC
 % In asymmetric cryptography, ensuring that the private key remains secret under any circumstances is crucial. (\texttt{not entirely sure about this, 
 % there's no punchline and it doesn't catch the attention of the reader. for sure an actual scientific question must be stated.})
 
-Lattice-based constructions have gained notoriety in recent times due to their complexity, a characteristic that correlates with enhanced security.
+Lattice-based constructions have gained recognition in recent times due to their complexity, a characteristic that correlates with enhanced security.
 As the need for secure and lightweight lattice-based algorithms increases, their complexity is also an aspect that requires intensive study, especially
 in the context of platforms like FPGA or ASIC, where area and power are limited resources.
 At the heart of many lattice-based constructions lies polynomial multiplication, which is the basic and most computationally intensive operation in 
@@ -142,11 +142,11 @@ security level increases, which makes the problem inefficient for practical cryp
 % polynomials over rings. 
 The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Lyubashevsky as an optimization of the initial LWE problem.
 
-Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the heuristic design of the NTRU cryptosystem, the ring structure over a finite field of moduli, over the polynomial representation 
+Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
 of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.
 However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
 problem, the computations become highly convoluted. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction, which we are discussing in the context of Post-Quantum Cryptography and 
-Fully-Homomorphic Encryption. Moreover, we are also discussing the Add \& Shift method in combination with modular reduction, which is the basis for other modular reduction methods.
+Fully-Homomorphic Encryption. Moreover, we are also discussing the Shift \& Add method in combination with modular reduction, which is the basis for other modular reduction methods.
 
 % \texttt{(the following sentences are just placeholders for now)}
 
@@ -201,30 +201,39 @@ Fully-Homomorphic Encryption. Moreover, we are also discussing the Add \& Shift 
 \label{sec:background}
 
 \subsection{Notation}
-We use $\mathbb{Z}_q$ to represent the set of integers modulo a quotient $q$. We represent the set of $n$-dimensional vectors with $\mathbb{Z}^n_q$
+We use $\mathbb{Z}_q$ to represent the set of integers modulo a quotient $q \geq 2$. We represent the set of $d$-dimensional vectors in $\mathbb{Z}^d_q$
+with $d \geq 1$.
 \subsection{Briefly on to Lattices}
 In group theory, a lattice is a discrete subgroup of the additive group, or a free abelian group of dimension $m$ which spans the vector space $\mathbb{R}^m$ and has a periodic structure. 
 Each point in the lattice is separated by a minimum distance, a property that underpins the periodic nature of the lattice structure. Coordinate-wise addition or subtraction of two lattice-points 
 produces a new lattice-point.
 
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics[width=0.6\textwidth]{figures/lattice-in-euclidean-space.png}
+%   \caption{A lattice in Euclidean plane ($\mathbb{R}^2$) \cite{latticesIntro2004}}
+%   \label{fig:LatticeInEuclideanPlane}
+% \end{figure}
+
+
+
+% More specifically, the lattice vectors are represented in the figure below:
+
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.6\textwidth]{figures/lattice-in-euclidean-space.png}
-  \caption{A lattice in Euclidean plane ($\mathbb{R}^2$) \cite{latticesIntro2004}}
-  \label{fig:LatticeInEuclideanPlane}
+  \includegraphics[width=0.6\textwidth]{figures/lattice-with-lattice-vectors.png}
+  \caption{Lattice vectors in Euclidean plane \cite{latticesInPQC}}
+  \label{fig:LatticeWithLatticeVectors}
 \end{figure}
-
-Mathematically, given $n$ linearly independent vectors $b_1, b_2,..., b_n \in \mathbb{R}^m$ as the basis, we define the lattice generated by them as follows \cite{latticesIntro2004}:
-\begin{equation*}
-  \mathcal{L}(b_1, b_2,..., b_n) = \left\{\sum x_ib_i\ |\ x_i \in \mathbb{Z}\right\} 
-\end{equation*}
 
 \newpage
 
-Conversely, if we were to represent the basis as an $m \times n$ matrix $B$, the lattice would be defined as \cite{latticesIntro2004}:
+Mathematically, given $n$ linearly independent vectors $a_1, a_2,..., a_n \in \mathbb{R}^m$ as the basis, we define the lattice generated by them as follows \cite{latticesIntro2004}:
 \begin{equation*}
-  \mathcal{L}(B)\ =\ \mathcal{L}(b_1, b_2,..., b_n) = \left\{Bx\ |\ x \in \mathbb{Z}\right\}
+  \Lambda(a_1, a_2,..., a_n) = \left\{\sum x_ia_i\ |\ x_i \in \mathbb{Z}\right\} 
 \end{equation*}
+
+In simpler terms, a lattice can be described as a vector space limited to integer multiples of its basis vectors.
 
 The minimum distance of a lattice in a norm $||\cdot||$ is the length of the shortest nonzero lattice vector. If the norm is unspecified, the default
 value is the Euclidean norm.
@@ -242,18 +251,54 @@ to the cryptographic application.
 
 % \cite{discreteGMeasuresLattices}
 \subsection{Learning with Errors}
-\paragraph{Output}
-We denote the Learning with Errors problem as following: $(\mathbf{a}, \langle \mathbf{a}, \mathbf{s} \rangle + e)$, where $\mathbf{a}$ is a vector
-drawn uniformly at random from $\mathbb{Z}^n_q$. The goal is to retrieve the secret vector $\mathbf{s} \in \mathbb{Z}^n_q$ given an error term
-$e$ drawn from an error.
+% We denote the Learning with Errors problem as following: $(\mathbf{a}, \langle \mathbf{a}, \mathbf{s} \rangle + e)$, where $\mathbf{a}$ is a vector
+% drawn uniformly at random from $\mathbb{Z}^n_q$. The goal is to retrieve the secret vector $\mathbf{s} \in \mathbb{Z}^n_q$ given an error term
+% $e$ drawn from an error.
+\paragraph{Definition.} Given a lattice $\Lambda \subseteq \mathbb{R}$ with a vector basis $a_1, a_2,..., a_d$ drawn uniformly at random from $\mathbb{Z}^d_q$, a secret lattice vector $\mathbf{s}=\sum s_ia_i \in \mathbb{Z}^d_q$ 
+and a noisy vector $\mathbf{e}$ drawn from a discrete Gaussian error distribution $\chi$ on $\mathbb{Z}_q$, the goal of the problem is to recover $\mathbf{s}$ from the approximated, noisy output 
+$\mathbf{b} = (\mathbf{a}, \langle \mathbf{a}, \mathbf{s} \rangle + e)$. \cite{regev2010learning}\\
 
-\subsection{NTRU}
-\subsection{Ring Learning with Errors}
+\[
+  \begin{aligned}
+  % \text{The Learning with Errors Problem:} \quad
+a_1^{(1)} \cdot s_1 + \dots + a_d^{(1)} \cdot s_d &\approx b^{(1)} \pmod{q} \\
+a_1^{(2)} \cdot s_1 + \dots + a_d^{(2)} \cdot s_d &\approx b^{(2)} \pmod{q} \\
+&\vdots \\
+a_1^{(n)} \cdot s_1 + \dots + a_d^{(n)} \cdot s_d &\approx b^{(n)} \pmod{q}
+\label{THeLearning with Errors Problem}
+\end{aligned}
+\]
+
+\paragraph{Error distribution.}
+The error distribution $\chi$ is chosen to be a normal (Gaussian) distribution. This is then rounded to the nearest integer of standard deviation ($\alpha q$, where $\alpha > 0$ is typically $\frac{1}{poly(d)}$)
+and reduced modulo $q$, to ensure that the noise is small relative to the modulus.
+
+\paragraph{Modulus.} The modulus $q$ is typically chosen to be a polynomial of the vector dimension $d$. The choice of a polynomial modulus significantly increases the size of the input, which further affects
+the cryptographic application's efficiency in the favor of increasing the problem's hardness.
+
+\paragraph{Number of equations.} Researchers have drawn the conclusion that the number of equations does not result in any changes in hardness - on the contrary, the hardness is independent of it.
+This is due to a property discussed in \cite{regev2010learning}, where given a fixed polynomial number of equations,  it is possible to generate an arbitrarily large number of additional equations, 
+which can be further utilized.
+
+
+
+\subsection{Ring Learning with Errors \cite{regev2010learning}} 
+Assuming that there exists some "structure'' in the LWE samples, we deduce that: if we consider $d$ to be a power of $2$, and if we assume that the $\mathbf{a}$ vectors arrive in blocks of $d$ samples
+$\mathbf{a}_1, \mathbf{a}_2,..., \mathbf{a}_d \in \mathbb{Z}^d_q$, where $\mathbf{a}_1 = a_1, a_2,..., a_d$ is still chosen uniformly at random , we can conclude that the remaining vectors $\mathbf{a}_i$
+can be reproduced as ($a_i,..., a_n, -a_1,..,-a_{i-1}$). This notation resembles a ring structure, where we write the rest of the $\mathbf{a}_i$ vectors in terms of $\mathbf{a}_1$, which reduces the 
+complexity to $O(n)$ elements of $\mathbb{Z}_q$ as opposed to $O(n^2)$ for Learing with Errors.
+
+Mathematically, this would imply trading the group of integers modulo $q$, $\mathbb{Z}^d_q$ for the ring of all polynomials over a finite field of moduli, $\mathbb{Z}_q / \langle x^d + 1\rangle$.
+The additional requirements for this change  to take place is having the dimension $d$ be a power of two, which further guarantees that $x^d + 1$ is irreducible over the rationals. ($why?$)
+
+\paragraph{Hardness.} Solving the RLWE problem implies a solution to the worst-case lattice problems, which are restricted to the family of $ideal\ lattices$ \cite{lyubashevsky2010ideal}. Ideal lattices are mathematical
+structures that satisfy a certain symmetry condition: if ($a_1, a_2,..., a_d$) is a lattice vector, then so is the ring representation of it ($x_2,...,x_n, -x_1$).
+Therefore, we can conclude that no changes over the hardness would occur in the context of Ring-Learning with Errors.
 \subsection{Polynomial multiplication}
 \subsection{Modular multiplication}
 \subsection{Montgomery Reduction}
 \subsection{Barrett Reduction}
-\subsection{Add \& Shift}
+\subsection{Shift \& Add}
 % Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
 
 % Every section starts with an introductory paragraph that outlines the contents and purpose of the section:
