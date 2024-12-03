@@ -15,11 +15,13 @@
 % Useful packages for complex content:
 \usepackage{amsmath,amsfonts,amssymb} % typesetting math
 %\usepackage{siunitx}                 % typesetting SI-units and formatted numbers
-%\usepackage{listings}                % typesetting source code
+\usepackage{listings}                % typesetting source code
 \usepackage{booktabs,multirow}        % utils for complex/beautiful tables
 %\usepackage{subcaption}              % placing multiple subfigures in a figure
 \usepackage{graphicx}                % including external image files
-%\usepackage{tikz}                    % drawing figures within LaTeX
+\usepackage{tikz}                    % drawing figures within LaTeX
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
 % Bibliography, referencing, and indexing
 \usepackage{csquotes}                 % typesetting \enquote{text in quotes} correctly
@@ -321,6 +323,64 @@ when performed using traditional long division, is highly inefficient.
 
 
 \subsection{Montgomery Reduction}
+Montgomery Reduction \cite{montgomery1985modular} is an efficient method that performs modular reduction after integer multiplication ($x \cdot y\ mod\ Q$).
+Its efficiency comes from replacing traditional long division with simple bitwise operations, as well as from precomputing the input values into the "Montgomery form''.
+% The Montgomery form represents the input by using residue classes without affecting modular addition or subtraction. 
+
+\paragraph{Montgomery Form.} We firstly define $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix $R = 2^n$, where 
+$n = machine\ word\ size$, and $gcd(Q, R) = 1$, with $R > Q$. This choice of $R$ ensures that the computations are inexpensive by making the shifting operation possible.
+Let $x,\ y$ be integers in the range $[0,\ Q-1]$. The Montgomery form of $x\cdot y\ mod\ Q$ is:
+
+\begin{equation*}
+  (xR\ mod\ Q)(yR\ mod\ Q)\ mod\ Q\ =\ (xyR)R\ mod\ Q.
+\end{equation*}
+
+However, we notice that after the multiplication, the result contains an extra $R$ that needs to be eliminated. A simple method to achieve this would be division by $R$, but
+the result is not divisible by $R$ due to the modulo operation. In this case, we can employ the modular inverse of $R$, which is $R^{-1}$ with the condition that $RR^{-1} - QQ' = 1$,
+and Q' is the set of integers satisfying  $0 < R^{-1} < Q$ and $0 < Q' < R$.
+By introducing the inverse, $R^{-1}$, the additional $R$ is reduced as follows:
+
+\begin{equation*}
+  (xR\ mod\ Q)(yR\ mod\ Q)R^{-1} \equiv (xR)(yR)R^{-1} \equiv (xy)R\ mod\ Q.
+\end{equation*}
+\\
+Thus, we have converted the multiplication between $x, y$ in Montgomery form.
+
+\newpage
+
+\paragraph{Reduction Algorithm.} 
+Furthermore, we will discuss how to apply modular reduction to an integer in Montgomery form by outlining the reduction algorithm below.
+
+\begin{algorithm}
+  \caption{Montgomery Reduction (REDC)}
+  \label{alg:REDC}
+  \begin{algorithmic}[1]
+  \REQUIRE $T, Q, R = 2^n$, where $\gcd(R, Q) = 1$.
+  \STATE $m \leftarrow (T\ mod\ R)Q' \mod R$
+  \STATE $t \leftarrow (T + m \cdot Q) / R$
+  \IF{$t \geq Q$}
+      \STATE $t \leftarrow T - Q$
+  \ENDIF
+  \RETURN $t$
+  \end{algorithmic}
+\end{algorithm}
+
+The input $T$ is any integer, or, in our case, the product between $(x,\ y)$ in Montgomery form. $Q$ is the modulus, $R=2^n$ is the Montgomery radix or base. The condition $gcd(Q, R) = 1$
+ensures that Montgomery reduction can be applied, as it requires that $R$ has a modular inverse modulo $Q$. The integer $Q'$ can be computed similarly to $R'$, 
+by using the Extended Euclidean Algorithm.
+
+The intermediate value $m$ is computed to ensure that $T+mQ$ is divisible by $R$. Knowing that $Q \cdot Q' \equiv -1\ mod\ R$,
+we deduce the fact that $Q \cdot Q' + 1$ is a multiple of $R$. By applying $Q'$ to m, we ensure that it will "undo" $Q\ mod\ R$ from the computation of $t$,
+such that $(T + m \cdot Q)\ mod\ R = 0$.
+
+\paragraph{Hardware implementation.}
+
+% For addition and subtraction, the result finds itself within the ranges $[0, 2Q-2]$, $[-Q+1, Q-1]$ respectively. If the sum exceeds $Q-1$ on the positive
+% side or $0$ on the negative side, we can map the result back to $[0, Q-1]$ by either subtracting or adding $Q$.
+
+% However, this is not the case with multiplication, where the result lies within the range $[0, Q^2 - 2Q + 1]$. To reduce the result into the range $[0, Q-1]$, we need to perform division,
+% which the bottleneck in many hardware applications. By using the Montgomery form, we ensure that long division is avoided by representing the inputs as multiples of $R$.
+
 \subsection{Barrett Reduction}
 \subsection{Shift \& Add}
 % Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
