@@ -329,19 +329,26 @@ Its efficiency comes from replacing traditional long division with simple bitwis
 
 \paragraph{Montgomery Form.} We firstly define $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix $R = 2^n$, where 
 $n = machine\ word\ size$, and $gcd(Q, R) = 1$, with $R > Q$. This choice of $R$ ensures that the computations are inexpensive by making the shifting operation possible.
-Let $x,\ y$ be integers in the range $[0,\ Q-1]$. The Montgomery form of $x\cdot y\ mod\ Q$ is:
+If $x$ is an integer, its Q-residue conversion is:
+\begin{equation*}
+  xR \mod Q. 
+\end{equation*}
+
+This conversion should have no impact over addition or subtraction, because the result format in Montgomery
+form is 1:1 as its integer counterpart due to the distributive law.
+However, this is not the case for integer multiplication. Let $x,\ y$ be integers in the range $[0,\ Q-1]$. The Montgomery form of $x\cdot y\ mod\ Q$ is:
 
 \begin{equation*}
   (xR\ mod\ Q)(yR\ mod\ Q)\ mod\ Q\ =\ (xyR)R\ mod\ Q.
 \end{equation*}
 
-However, we notice that after the multiplication, the result contains an extra $R$ that needs to be eliminated. A simple method to achieve this would be division by $R$, but
+We notice that after the multiplication, the result contains an extra $R$ that needs to be eliminated. A simple method to achieve this would be division by $R$, but
 the result is not divisible by $R$ due to the modulo operation. In this case, we can employ the modular inverse of $R$, which is $R^{-1}$ with the condition that $RR^{-1} - QQ' = 1$,
-and Q' is the set of integers satisfying  $0 < R^{-1} < Q$ and $0 < Q' < R$.
+and $Q'$ is the set of integers satisfying  $0 < R^{-1} < Q$ and $0 < Q' < R$.
 By introducing the inverse, $R^{-1}$, the additional $R$ is reduced as follows:
 
 \begin{equation*}
-  (xR\ mod\ Q)(yR\ mod\ Q)R^{-1} \equiv (xR)(yR)R^{-1} \equiv (xy)R\ mod\ Q.
+  (xR\ mod\ Q)(yR\ mod\ Q)R^{-1} \equiv (xR)(yR)R^{-1} \equiv (xyR)RR^{-1} \equiv (xy)R\ mod\ Q.
 \end{equation*}
 \\
 Thus, we have converted the multiplication between $x, y$ in Montgomery form.
@@ -356,7 +363,9 @@ Furthermore, we will discuss how to apply modular reduction to an integer in Mon
   \label{alg:REDC}
   \begin{algorithmic}[1]
   \REQUIRE $T, Q, R = 2^n$, where $\gcd(R, Q) = 1$.
-  \STATE $m \leftarrow (T\ mod\ R)Q' \mod R$
+  \renewcommand{\algorithmicensure}{\textbf{Output:}}
+  \ENSURE $TR^{-1} \mod Q$
+  \STATE $m \leftarrow (T \mod R)Q' \mod R$
   \STATE $t \leftarrow (T + m \cdot Q) / R$
   \IF{$t \geq Q$}
       \STATE $t \leftarrow T - Q$
@@ -370,10 +379,42 @@ ensures that Montgomery reduction can be applied, as it requires that $R$ has a 
 by using the Extended Euclidean Algorithm.
 
 The intermediate value $m$ is computed to ensure that $T+mQ$ is divisible by $R$. Knowing that $Q \cdot Q' \equiv -1\ mod\ R$,
-we deduce the fact that $Q \cdot Q' + 1$ is a multiple of $R$. By applying $Q'$ to m, we ensure that it will "undo" $Q\ mod\ R$ from the computation of $t$,
+we can infer that $Q \cdot Q' + 1$ is a multiple of $R$. By applying $Q'$ to m, we ensure that it will "undo" $Q\ mod\ R$ from the computation of $t$,
 such that $(T + m \cdot Q)\ mod\ R = 0$.
+To validate this, we extend $T + mQ$ as follows:
 
-\paragraph{Hardware implementation.}
+\begin{equation*}
+  T + mQ \equiv T + ((T\ mod\ R)Q'\mod R)Q \equiv T + T \cdot \underbrace{QQ'}_{\text{\( QQ' \equiv -1 \mod R \)}} \equiv T-T \equiv 0 \mod R
+\end{equation*}
+
+\paragraph{Hardware implementation.} Even though the REDC algorithm delivers the desired result in an optimal manner, implementing it in hardware could lead to a 
+few issues, among which the most obvious one is the computation of $N'$. In this regard, we are also presenting an iterative method that uses addition, shifts and
+subtractions.
+
+Let $R=2^n$, $gcd(R, Q)=1$, let $Q$ be odd. The multiplicands are numbers in binary representation, $x, y$, where $x = (x_{n-1}, x_{n-2},...,x_{0})_2$ and $0 \leq y \leq Q$. 
+We define an accumulator value whose parity bit determines whether or not the intermediate sum needs to be adjusted by adding $Q$ or not. In both cases, we divide the result by
+$2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xyR^{-1} \mod Q$. \cite{montgomery1985modular}, \cite{7219961}
+
+\begin{algorithm}
+  \caption{Montgomery Reduction Hardware Implementation}
+  \label{alg:montgomery}
+  \begin{algorithmic}[1]
+  \REQUIRE \( X, Y, Q \) and \( Q \) is odd, \( X, Y < Q \)
+  \renewcommand{\algorithmicensure}{\textbf{Output:}}
+  \ENSURE \( Acc \leftarrow X \times Y \times R^{-1} \mod Q \)
+  \STATE \( Acc \leftarrow 0 \)
+  \FOR{ \( i = 0 \) \TO \( n-1 \)}
+      \STATE \( Acc \leftarrow Acc + x_i \times Y \)
+      \IF{ \( r_0 = 0 \) }
+          \STATE \( Acc \leftarrow Acc / 2 \)
+      \ELSE
+          \STATE \( Acc \leftarrow (Acc + Q) / 2 \)
+      \ENDIF
+  \ENDFOR
+  \RETURN \( Acc \)
+  \end{algorithmic}
+  \end{algorithm}
+
 
 % For addition and subtraction, the result finds itself within the ranges $[0, 2Q-2]$, $[-Q+1, Q-1]$ respectively. If the sum exceeds $Q-1$ on the positive
 % side or $0$ on the negative side, we can map the result back to $[0, Q-1]$ by either subtracting or adding $Q$.
