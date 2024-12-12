@@ -327,7 +327,7 @@ Montgomery Reduction \cite{montgomery1985modular} is an efficient method that pe
 Its efficiency comes from replacing traditional long division with simple bitwise operations, as well as from precomputing the input values into the "Montgomery form''.
 % The Montgomery form represents the input by using residue classes without affecting modular addition or subtraction. 
 
-\paragraph{Montgomery Form.} We firstly define $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix $R = 2^n$, where 
+\paragraph{Montgomery Form.} We firstly define $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix (number base) $R = 2^n$, where 
 $n = machine\ word\ size$, and $gcd(Q, R) = 1$, with $R > Q$. This choice of $R$ ensures that the computations are inexpensive by making the shifting operation possible.
 If $x$ is an integer, its Q-residue conversion is:
 \begin{equation*}
@@ -413,7 +413,7 @@ $2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xy
   \ENDFOR
   \RETURN \( Acc \)
   \end{algorithmic}
-  \end{algorithm}
+\end{algorithm}
 
 
 % For addition and subtraction, the result finds itself within the ranges $[0, 2Q-2]$, $[-Q+1, Q-1]$ respectively. If the sum exceeds $Q-1$ on the positive
@@ -421,8 +421,58 @@ $2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xy
 
 % However, this is not the case with multiplication, where the result lies within the range $[0, Q^2 - 2Q + 1]$. To reduce the result into the range $[0, Q-1]$, we need to perform division,
 % which the bottleneck in many hardware applications. By using the Montgomery form, we ensure that long division is avoided by representing the inputs as multiples of $R$.
-
+\newpage
 \subsection{Barrett Reduction}
+Barrett's reduction \cite{barrett1986implementing} started out as a technique provided by Paul Barrett in 1986 to obtain a high-speed implementation of the RSA encryption algorithm
+on a digital signal processing chip. This technique achieved a two and a half second encryption time on average for $512$ bit exponent and modulus, on a first generation digital signal processor (DSP).
+A digital signal processor is a multiplier accumulator (MAC) and a fast microprocessor that facilitates fast multiplication due to the multiplier unit it includes in addition to the arithmetic logic unit (ALU).
+
+The algorithm is known for its efficiency due to replacing division by cheaper multiplication and by precomputing terms using bitshift operations.
+Required is a \textbf{fixed} modulus $M$ and a radix $R = 2^{2k}$, where $k$ is the length of the modulus. The radix and the modulus play a crucial role in the precomputation step.
+In addition, the input multiplicands, $x, y$ must be elements of $[0, M-1]$.
+
+Taking into consideration all previous input constraints, we seek to retrieve the remainder of the operation $(x \cdot y \mod M)$.
+The schoolbook method presented below \cite{ModArith} first computes the quotient $q$, which is further used to compute the remainder $r$.
+However, this method is not suitable for hardware implementation due to the division operation which is very expensive.
+\begin{align*}
+  &t = x \cdot y\\
+  &q = \lfloor t / m \rfloor\\
+  &r = t - q \cdot m.
+\end{align*}
+In this regard, Barrett's algorithm introduces the precomputation step where the floating point term $\frac{1}{m}$ is approximated by truncating it after the first $2k$ bits found after $(.)$,
+and brought to a higher precision by a shift to the left by the radix $R$ which scales it. The value of the precomputed term will not change as long as the value of the modulus remains constant. \cite{4272869}
+Direct division is as well avoided in the approximation step of the quotient (line 3 in the algorithm) through the division by the radix, which represents a shift to the right in hardware implementations.
+
+\begin{algorithm}
+  \caption{Barrett Reduction}
+  \label{alg:montgomery}
+  \begin{algorithmic}[1]
+  \REQUIRE \( X, Y, M \), \( X, Y < M \)
+  \renewcommand{\algorithmicensure}{\textbf{Output:}}
+  \ENSURE \(X \cdot Y \mod M \)
+  \STATE \( T \leftarrow X \cdot Y \)
+  \STATE \( \mu \leftarrow \lfloor(1 / M) \cdot 2^{2k}\rfloor \)
+  \STATE \( q \leftarrow \lfloor (T * \mu) / 2^{2k} \rfloor \)
+  \STATE \( r \leftarrow T - q \cdot M \)
+  \IF{ \( r \geq M \) }
+      \STATE \( r \leftarrow r - M \)
+  \ENDIF
+  \RETURN \( r \)
+  \end{algorithmic}
+\end{algorithm}
+
+\paragraph{Mathematically,} the formula for finding the remainder of $(x \cdot y \mod M)$ is given by:
+
+\begin{align*}
+  &r = T - \left\lfloor \frac{T \cdot \lfloor \frac{2^{2k}}{m}\rfloor}{2^{2k}} \right\rfloor \cdot M
+\end{align*}
+
+Which is further equal to:
+\begin{align*}
+  &r = T - \left\lfloor \frac{T \cdot \mu}{R} \right\rfloor \cdot M
+\end{align*}
+
+Where $T = x \cdot y$ and R is the radix.
 \subsection{Shift \& Add}
 % Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
 
