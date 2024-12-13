@@ -105,13 +105,14 @@ in the context of platforms like FPGA or ASIC, where area and power are limited 
 Learning with Errors problem \cite{regev2010learning}, which is considered to be as hard as an NP-hard problem \cite{micciancio2013hardness}.
 
 Fully-Homomorphic Encryption \& Post-Quantum Cryptography are at the forefront of cryptographic research. While FHE enables computation on encrypted data, PQC
-addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{soni2021crystals} are 
-lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation. 
+addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{2018crystals} are 
+lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation, usually employed during encryption.
 
-At the heart of these lattice-based constructions lies polynomial multiplication, which is the basic and most computationally intensive operation in Ring Learning 
-with Errors cryptosystems. One crucial aspect of polynomial multiplication in lattice-based cryptography is modular multiplication, which 
-ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial security properties. However, the higher the security 
-degree, the more convoluted these operations become and hence resources such as occupied area or power consumption need to be preserved.
+At the heart of these lattice-based constructions lies polynomial multiplication, which is the most computationally intensive operation in Ring Learning 
+with Errors cryptosystems, with its complexity spanning $O(n^{2})$. To optimize this, Number Theoretic Transform (NTT) is applied to reduce the complexity to $O(nlogn)$.
+One crucial operation during NTT is modular multiplication, which ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial 
+security properties. However, the higher the security degree, the more convoluted these operations become and hence resources such as occupied area or power consumption 
+need to be preserved.
 
 For this reason, we strive to provide an evaluation of modular multiplication methods targeted on digital platforms, in order to be aware of possible bottlenecks 
 or caveats during the implementation of such schemes. In this study, we will mainly discuss the Montgomery Reduction, Barrett Reduction and possible variations of them
@@ -123,30 +124,25 @@ which is a precomputation step that facilitates for a faster, non-traditional di
 On the other hand, Barrett's modular multiplication algorithm \cite{barrett1986implementing} is more robust to changes in modulus due to the introduction of a precomputation step which highly depends on the modulus and
 its bit width. The inclusion of this step enables the algorithm to eliminate division in favor of less expensive multiplication, making it efficient.
 
+
+A comparison between the Montgomery and Barrett modular multipliers has been carried out in \cite{kong2006comparison} on a Xilinx Virtex 2 FPGA platform using VHDL and a general modulus.
+The goal was to compare area and timing results when computing $C = A \cdot B \mod M$, where $A$, $B$, $C$, $M$ are all $n$-bit integers with lengths up to 32 bits.
+For the Montgomery multipliers, four evaluation methods have been employed, and namely high-radix, separated/interleaved structure, trivial digit selection and quotient digit pipelining.
+As for the Barrett multiplier, an improved separated method has been applied: $A \cdot B$ is precomputed by using the inverse of the modulus, $M^{-1}$.
+Intermediate area results for high-radix separated/interleaved Montgomery reduction with radix $r = 2^{k}$ show that: for the interleaved  method, the area required in FPGA slices is higher
+at smaller $k$-values (where k is the word length or bits per digit), but as $k$ increases, the results for both the interleaved and separated methods converge to the same point, as depicted below:
+The final results show that  for the current setup with a general modulus, the choice between Montgomery and Barrett highly depends on the word length. However, for word lengths up to 16 bits,
+Barrett's reduction seems to be the appropriate choice.
+
+A design space study made on modular multipliers implemented on ASIC for Fully-Homomorphic Encryption is presented in \cite{10129292}. The implementation is carried out in bit-parallel and bit-serial
+designs, both at the system-level and at the block-level. The results show that at the block-level, bit-parallel multipliers are more area- and power-efficient compared to bit-serial designs.
+The final conclusion states that the Montgomery modular multiplication with a constrained modulus turns out to be the most efficient design in terms of area and power consumption both at the system
+level and at the block level. This ensures efficient polynomial reduction in FHE on ASIC platforms.
+
+
 % gonna use them to smoothly transition to the background?
 % To further mitigate these potential losses, we need to firstly understand the complexity of the operations
 % performed within these methods.
-
-% Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee security within a certain standard.\\
-% After 2005, the Learning with Errors problem published by Oded Regev \cite{regev2010learning} became a standard for cryptographic constructions due the strict security requirements it enforces.
-% A study made by Micciancio \& Peikert proves its hardness to resemble the norms of approximate lattice problems in the worst case \cite{micciancio2013hardness}.
-% The problem states that a secret vector $\textbf{s}$ should be retrieved from a system of linear noisy equations, where the public vector $\textbf{a}$ is drawn uniformly at random
-% and the error term $\textit{e}$ is drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
-% by performing Gaussian decomposition over the system of equations, the addition of the noise term makes it computationally infeasible to retrieve the
-% secret for appropriate parameters.
-
-
-% The parameters provided to Learning with Errors, either number of vectors or vector dimension, usually determine the complexity of the encryption operation \cite{micciancio2013hardness}, or more specifically, the key size. 
-% Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
-% security level increases, which makes the problem inefficient for practical cryptographic applications.
-% The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Vladimir Lyubashevsky as an optimization of the initial LWE problem.
-
-% Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
-% of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.
-% However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
-% problem, the computations become highly convoluted. From a security perspective, this is beneficial, particularly in the context of FHE and PQC, which both make use of the ring property and the polynomials in afferrent applications. 
-% However, the issue lies within the actual computation in the technique. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction.
-
 
 
 % which we are discussing in the context of Post-Quantum Cryptography and 
@@ -255,6 +251,13 @@ to the cryptographic application.
 
 % \cite{discreteGMeasuresLattices}
 \subsection{Learning with Errors}
+Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee security within a certain standard.\\
+After 2005, the Learning with Errors problem published by Oded Regev \cite{regev2010learning} became a standard for cryptographic constructions due the strict security requirements it enforces.
+A study made by Micciancio \& Peikert proves its hardness to resemble the norms of approximate lattice problems in the worst case \cite{micciancio2013hardness}.
+The problem states that a secret vector $\textbf{s}$ should be retrieved from a system of linear noisy equations, where the public vector $\textbf{a}$ is drawn uniformly at random
+and the error term $\textit{e}$ is drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
+by performing Gaussian decomposition over the system of equations, the addition of the noise term makes it computationally infeasible to retrieve the
+secret for appropriate parameters.
 % We denote the Learning with Errors problem as following: $(\mathbf{a}, \langle \mathbf{a}, \mathbf{s} \rangle + e)$, where $\mathbf{a}$ is a vector
 % drawn uniformly at random from $\mathbb{Z}^n_q$. The goal is to retrieve the secret vector $\mathbf{s} \in \mathbb{Z}^n_q$ given an error term
 % $e$ drawn from an error.
@@ -282,11 +285,21 @@ the cryptographic application's efficiency in the favor of increasing the proble
 
 \paragraph{Number of equations.} Researchers have drawn the conclusion that the number of equations does not result in any changes in hardness - on the contrary, the hardness is independent of it.
 This is due to a property discussed in \cite{regev2010learning}, where given a fixed polynomial number of equations,  it is possible to generate an arbitrarily large number of additional equations, 
-which can be further utilized.
+which can be further utilized.\\
+
+The parameters provided to Learning with Errors, either number of vectors or vector dimension, usually determine the complexity of the encryption operation \cite{micciancio2013hardness}, or more specifically, the key size. 
+Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
+security level increases, which makes the problem inefficient for practical cryptographic applications.
+The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Vladimir Lyubashevsky as an optimization of the initial LWE problem.
 
 
+\subsection{Ring Learning with Errors}
+Lyubashevsky's solution \cite{lyubashevsky2010ideal} suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
+of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.\\
+% However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
+% problem, the computations become highly convoluted. From a security perspective, this is beneficial, particularly in the context of FHE and PQC, which both make use of the ring property and the polynomials in afferrent applications. 
+% However, the issue lies within the actual computation in the technique. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction.
 
-\subsection{Ring Learning with Errors \cite{regev2010learning}} 
 Assuming that there exists some repeating "pattern'' in the LWE samples, we deduce that: if we consider $d$ to be a power of $2$, and if we assume that the $\mathbf{a}$ vectors arrive in blocks of $d$ samples
 $\mathbf{a}_1, \mathbf{a}_2,..., \mathbf{a}_d \in \mathbb{Z}^d_q$, where $\mathbf{a}_1 = a_1, a_2,..., a_d$ is still chosen uniformly at random , we can conclude that the remaining vectors $\mathbf{a}_i$
 can be reproduced as ($a_i,..., a_n, -a_1,..,-a_{i-1}$). This notation resembles a ring structure, where we write the rest of the $\mathbf{a}_i$ vectors in terms of $\mathbf{a}_1$, which reduces the 
