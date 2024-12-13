@@ -99,56 +99,58 @@ ASIC
 % In asymmetric cryptography, ensuring that the private key remains secret under any circumstances is crucial. (\texttt{not entirely sure about this, 
 % there's no punchline and it doesn't catch the attention of the reader. for sure an actual scientific question must be stated.})
 
-Lattice-based constructions have gained recognition in recent times due to their complexity, a characteristic that correlates with enhanced security.
+Lattice-based constructions have gained a lot of attention in recent times due to their complexity, a characteristic that correlates with enhanced security.
 As the need for secure and lightweight lattice-based algorithms increases, their complexity is also an aspect that requires intensive study, especially
-in the context of platforms like FPGA or ASIC, where area and power are limited resources.
-At the heart of many lattice-based constructions lies polynomial multiplication, which is the basic and most computationally intensive operation in 
-Ring Learning with Errors cryptosystems. One crucial aspect of polynomial multiplication in lattice-based cryptography is modular multiplication, which 
+in the context of platforms like FPGA or ASIC, where area and power are limited resources. Cryptosystems based on lattices derive their hardness from the
+Learning with Errors problem \cite{regev2010learning}, which is considered to be as hard as an NP-hard problem \cite{micciancio2013hardness}.
+
+Fully-Homomorphic Encryption \& Post-Quantum Cryptography are at the forefront of cryptographic research. While FHE enables computation on encrypted data, PQC
+addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{soni2021crystals} are 
+lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation. 
+
+At the heart of these lattice-based constructions lies polynomial multiplication, which is the basic and most computationally intensive operation in Ring Learning 
+with Errors cryptosystems. One crucial aspect of polynomial multiplication in lattice-based cryptography is modular multiplication, which 
 ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial security properties. However, the higher the security 
 degree, the more convoluted these operations become and hence resources such as occupied area or power consumption need to be preserved.
 
 For this reason, we strive to provide an evaluation of modular multiplication methods targeted on digital platforms, in order to be aware of possible bottlenecks 
-or caveats during the implementation of such schemes. To further mitigate these potential losses, we need to firstly understand the complexity of the operations
-performed within these methods.
+or caveats during the implementation of such schemes. In this study, we will mainly discuss the Montgomery Reduction, Barrett Reduction and possible variations of them
+in the context of lattice-based schemes on FPGA/ASIC.
 
-% \{ \texttt{I think that 90 \% of the follwing paragraphs need to be moved into the background section because there's too many details}\}
-Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee security within a certain standard.\\
-After 2005, the Learning with Errors problem published by Oded Regev \cite{regev2010learning} became a standard for cryptographic constructions due the strict security requirements it enforces.
-A study made by Micciancio \& Peikert proves its hardness to resemble the norms of approximate lattice problems in the worst case \cite{micciancio2013hardness}.
-% It assumes a set of random linear equations over a secret vector $\textbf{s}$. Each equation is of form $\textbf{a} \cdot \textbf{s} + e$, where $\textbf{a}$ is the public
-% vector, $\textbf{s}$ is the secret vector and $e$ is the error term drawn from a Gaussian distribution.
-% While it may be possible to have access to $\textbf{s}$ with the multiplication between $\textbf{a}$ and $\textbf{s}$ alone, the error term makes it computationally 
-% infeasible to recover the secret $\textbf{s}$ for appropriate parameters.\\
-% \texttt{I think that the following block of text is too much into detail and could be``abstracted''}
-The problem states that a secret vector $\textbf{s}$ should be retrieved from a system of linear noisy equations, where the public vector $\textbf{a}$ is drawn uniformly at random
-and the error term $\textit{e}$ is drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
-by performing Gaussian decomposition over the system of equations, the addition of the noise term makes it computationally infeasible to retrieve the
-secret for appropriate parameters.
 
-% \{The original problem states that a secret vector $\textbf{s}$ from a \textit{'noisy'} system of linear equations of type $\textbf{a} \cdot \textbf{s} + e$ should be retrieved, where $\textbf{a}$ is the public
-% vector drawn uniformly at random and $\textbf{e}$ is the error term or the $noise$, drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
+Montgomery Reduction \cite{montgomery1985modular} is well-known for its efficiency in modular arithmetic due to replacing classical long division with bitwise operations, and by introducing the Montgomery form,
+which is a precomputation step that facilitates for a faster, non-traditional division operation.
+On the other hand, Barrett's modular multiplication algorithm \cite{barrett1986implementing} is more robust to changes in modulus due to the introduction of a precomputation step which highly depends on the modulus and
+its bit width. The inclusion of this step enables the algorithm to eliminate division in favor of less expensive multiplication, making it efficient.
+
+% gonna use them to smoothly transition to the background?
+% To further mitigate these potential losses, we need to firstly understand the complexity of the operations
+% performed within these methods.
+
+% Modern-day experts base their encryption algorithms on hard mathematical problems such as the Learning with Errors problem to guarantee security within a certain standard.\\
+% After 2005, the Learning with Errors problem published by Oded Regev \cite{regev2010learning} became a standard for cryptographic constructions due the strict security requirements it enforces.
+% A study made by Micciancio \& Peikert proves its hardness to resemble the norms of approximate lattice problems in the worst case \cite{micciancio2013hardness}.
+% The problem states that a secret vector $\textbf{s}$ should be retrieved from a system of linear noisy equations, where the public vector $\textbf{a}$ is drawn uniformly at random
+% and the error term $\textit{e}$ is drawn from a Gaussian distribution. While it may be possible to recover the secret $\textbf{s}$
 % by performing Gaussian decomposition over the system of equations, the addition of the noise term makes it computationally infeasible to retrieve the
-% secret for appropriate parameters.\} Thus, the main challenge that the attacker faces is distinguishing ``random noisy equations'' from truly uniform ones.
+% secret for appropriate parameters.
 
-% from $\textbf{a} \cdot \textbf{s}$ alone 
 
-The parameters provided to Learning with Errors, either number of vectors or vector dimension, usually determine the complexity of the encryption operation \cite{micciancio2013hardness}, or more specifically, the key size. 
-Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
-security level increases, which makes the problem inefficient for practical cryptographic applications.
-% problem
-% Nevertheless, 
-% cryptographic schemes based on \gls{LWE} tend to require large key sizes. 
-% this highly depends on the desired security level \textit{n} which also determines the ``hardness'' . 
-% Cryptographic applications often need at least  $n$ vectors $\textbf{a}_1,\ldots,\textbf{a}_n$, which leads to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
-% security level increases, which makes the problem inefficient for practical cryptographic applications. A solution to this issue is tightly related to the NTRU problem, which is based on the mathematical structure of
-% polynomials over rings. 
-The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Lyubashevsky as an optimization of the initial LWE problem.
+% The parameters provided to Learning with Errors, either number of vectors or vector dimension, usually determine the complexity of the encryption operation \cite{micciancio2013hardness}, or more specifically, the key size. 
+% Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
+% security level increases, which makes the problem inefficient for practical cryptographic applications.
+% The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Vladimir Lyubashevsky as an optimization of the initial LWE problem.
 
-Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
-of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.
-However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
-problem, the computations become highly convoluted. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction, which we are discussing in the context of Post-Quantum Cryptography and 
-Fully-Homomorphic Encryption. Moreover, we are also discussing the Shift \& Add method in combination with modular reduction, which is the basis for other modular reduction methods.
+% Lyubashevsky's solution suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
+% of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.
+% However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
+% problem, the computations become highly convoluted. From a security perspective, this is beneficial, particularly in the context of FHE and PQC, which both make use of the ring property and the polynomials in afferrent applications. 
+% However, the issue lies within the actual computation in the technique. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction.
+
+
+
+% which we are discussing in the context of Post-Quantum Cryptography and 
+% Fully-Homomorphic Encryption. Moreover, we are also discussing the Shift \& Add method in combination with modular reduction, which is the basis for other modular reduction methods.
 
 % \texttt{(the following sentences are just placeholders for now)}
 
@@ -228,7 +230,7 @@ produces a new lattice-point.
   \label{fig:LatticeWithLatticeVectors}
 \end{figure}
 
-\newpage
+% \newpage
 
 Mathematically, given $n$ linearly independent vectors $a_1, a_2,..., a_n \in \mathbb{R}^m$ as the basis, we define the lattice generated by them as follows \cite{latticesIntro2004}:
 \begin{equation*}
@@ -353,7 +355,7 @@ By introducing the inverse, $R^{-1}$, the additional $R$ is reduced as follows:
 \\
 Thus, we have converted the multiplication between $x, y$ in Montgomery form.
 
-\newpage
+% \newpage
 
 \paragraph{Reduction Algorithm.} 
 Furthermore, we will discuss how to apply modular reduction to an integer in Montgomery form by outlining the reduction algorithm below.
@@ -421,14 +423,14 @@ $2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xy
 
 % However, this is not the case with multiplication, where the result lies within the range $[0, Q^2 - 2Q + 1]$. To reduce the result into the range $[0, Q-1]$, we need to perform division,
 % which the bottleneck in many hardware applications. By using the Montgomery form, we ensure that long division is avoided by representing the inputs as multiples of $R$.
-\newpage
+% \newpage
 \subsection{Barrett Reduction}
 Barrett's reduction \cite{barrett1986implementing} started out as a technique provided by Paul Barrett in 1986 to obtain a high-speed implementation of the RSA encryption algorithm
 on a digital signal processing chip. This technique achieved a two and a half second encryption time on average for $512$ bit exponent and modulus, on a first generation digital signal processor (DSP).
 A digital signal processor is a multiplier accumulator (MAC) and a fast microprocessor that facilitates fast multiplication due to the multiplier unit it includes in addition to the arithmetic logic unit (ALU).
 
-The algorithm is known for its efficiency due to replacing division by cheaper multiplication and by precomputing terms using bitshift operations.
-Required is a \textbf{fixed} modulus $M$ and a radix $R = 2^{2k}$, where $k$ is the length of the modulus. The radix and the modulus play a crucial role in the precomputation step.
+The algorithm is known for its efficiency due to replacing division by cheaper multiplication and by precomputing terms while using bitshift operations.
+Required are a \textbf{fixed} modulus $M$ and a radix $R = 2^{2k}$, where $k$ is the length of the modulus. The radix and the modulus play a crucial role in the precomputation step.
 In addition, the input multiplicands, $x, y$ must be elements of $[0, M-1]$.
 
 Taking into consideration all previous input constraints, we seek to retrieve the remainder of the operation $(x \cdot y \mod M)$.
@@ -473,7 +475,37 @@ Which is further equal to:
 \end{align*}
 
 Where $T = x \cdot y$ and R is the radix.
+
+% \newpage
 \subsection{Shift \& Add}
+
+Shift \& Add is a classic multiplication method which is mainly employed in in the context of hardware implementation.
+This method is at the heart of many algorithms, ranging from cryptographic applications to graphics and image processing due to the lightweight
+approach it has over the multiplication. The main idea stands in leveraging bitshift operations which are equivalent to either multiplication or division.
+
+Therefore, given two integers $x, y$ in binary representation, the algorithm is stated as follows:
+
+\begin{algorithm}
+  \caption{Shift \& Add multiplication}
+  \label{alg:montgomery}
+  \begin{algorithmic}[1]
+  \REQUIRE \( X, Y\ \text{in binary representation}\)
+  \renewcommand{\algorithmicensure}{\textbf{Output:}}
+  \ENSURE \(X \cdot Y\)
+  \STATE \( Prod \leftarrow 0\ (\text{because it is computed as a sum}) \)
+  \FOR{ \( i = bitlength(X) - 1 \) \TO \( 0 \)}
+      \IF{ \( X[i] = 1 \) }
+          \STATE \( Prod = Prod + X[i] << i \)
+      \ENDIF
+  \ENDFOR
+  \RETURN \( Prod \)
+  \end{algorithmic}
+\end{algorithm}
+
+We start from the least significant bit of either of the numbers, in our case $x$. If the current bit is $1$, we shift the value to the left by $i$ and
+we add it to the $Prod$ variable. Otherwise, if the bit value is 0, nothing is done. At the end, the value of the product is returned.
+
+
 % Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
 
 % Every section starts with an introductory paragraph that outlines the contents and purpose of the section:
