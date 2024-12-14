@@ -109,7 +109,7 @@ addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such a
 lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation, usually employed during encryption.
 
 At the heart of these lattice-based constructions lies polynomial multiplication, which is the most computationally intensive operation in Ring Learning 
-with Errors cryptosystems, with its complexity spanning $O(n^{2})$. To optimize this, Number Theoretic Transform (NTT) is applied to reduce the complexity to $O(nlogn)$.
+with Errors cryptosystems, with its time-complexity spanning $O(n^{2})$. To optimize this, Number Theoretic Transform (NTT) is applied to reduce the complexity to $O(nlogn)$.
 One crucial operation during NTT is modular multiplication, which ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial 
 security properties. However, the higher the security degree, the more convoluted these operations become and hence resources such as occupied area or power consumption 
 need to be preserved.
@@ -288,14 +288,14 @@ This is due to a property discussed in \cite{regev2010learning}, where given a f
 which can be further utilized.\\
 
 The parameters provided to Learning with Errors, either number of vectors or vector dimension, usually determine the complexity of the encryption operation \cite{micciancio2013hardness}, or more specifically, the key size. 
-Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}. This aspect can represent a challenge as the need for a higher 
+Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, which lead to key sizes of $n^2$ \cite{regev2010learning}, which inherently means $O(n^{2})$ space complexity. This aspect can represent a challenge as the need for a higher 
 security level increases, which makes the problem inefficient for practical cryptographic applications.
 The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Vladimir Lyubashevsky as an optimization of the initial LWE problem.
 
 
 \subsection{Ring Learning with Errors}
-Lyubashevsky's solution \cite{lyubashevsky2010ideal} suggests a more efficient and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
-of public and private keys. With that being said, using polynomial multiplication within a ring structure instead of vectors and inner products should be more lightweight from a computational point of view.\\
+Lyubashevsky's solution \cite{lyubashevsky2010ideal} suggests a more lightweight and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
+of public and private keys. With that being said, using polynomials within a ring structure instead of vectors and matrices should be more efficient storage-wise, leading to space complexities of $O(n)$.\\
 % However, if we were to plainly multiply each polynomial with another, we would end up doing modulo multiplication of all coefficients with each other. When combining this method with the large parameters passed to the RLWE
 % problem, the computations become highly convoluted. From a security perspective, this is beneficial, particularly in the context of FHE and PQC, which both make use of the ring property and the polynomials in afferrent applications. 
 % However, the issue lies within the actual computation in the technique. For this reason, more advanced modular multiplication methods have been introduced, such as Montgomery Reduction or Barrett Reduction.
