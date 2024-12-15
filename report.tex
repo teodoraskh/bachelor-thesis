@@ -8,7 +8,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \usepackage[acronym]{glossaries}
-\makeglossaries
 \addtokomafont{disposition}{\rmfamily}
 \renewcommand*\thesection{\arabic{section}}
 
@@ -22,14 +21,17 @@
 \usepackage{tikz}                    % drawing figures within LaTeX
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{xcolor}
 
 % Bibliography, referencing, and indexing
 \usepackage{csquotes}                 % typesetting \enquote{text in quotes} correctly
 \usepackage[backend=biber,
-            style=alphabetic,
-            minalphanames=3, maxalphanames=4,
-            maxbibnames=20]{biblatex} % to generate the bibliography
+style=alphabetic,
+minalphanames=3, maxalphanames=4,
+maxbibnames=20]{biblatex} % to generate the bibliography
 \addbibresource{report.bib}           % name of the bib-file
+
+\makeglossaries
 
 % Useful utils:
 %\usepackage{todonotes}               % add ToDo markers (\todo{...}, \todo[inline]{...})
@@ -59,7 +61,7 @@
 
 
 \begin{abstract}\noindent
-Lattice-based cryptography is the backbone for an entire class of systems offering post-quantum security.\\
+Lattice-based cryptography is the backbone for an entire class of systems offering post-quantum security.
 Many of these cryptosystems require rigorous mathematical approaches for laying the foundation of security, especially in the case of 
 post-quantum computing or fully-homomorphic encryption schemes. A well-known NP-hard problem that is fundamental for both previously mentioned algorithms
 is Ring Learning with Errors, which uses polynomial arithmetic. In several cases, if these polynomials are small and a naive computational method is used,
@@ -105,95 +107,63 @@ in the context of platforms like FPGA or ASIC, where area and power are limited 
 Learning with Errors problem \cite{regev2010learning}, which is considered to be as hard as an NP-hard problem \cite{micciancio2013hardness}.
 
 Fully-Homomorphic Encryption \& Post-Quantum Cryptography are at the forefront of cryptographic research. While FHE enables computation on encrypted data, PQC
-addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{2018crystals} are 
+addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as Genotype Imputation \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{2018crystals} are 
 lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation, usually employed during encryption.
 
 At the heart of these lattice-based constructions lies polynomial multiplication, which is the most computationally intensive operation in Ring Learning 
 with Errors cryptosystems, with its time-complexity spanning $O(n^{2})$. To optimize this, Number Theoretic Transform (NTT) is applied to reduce the complexity to $O(nlogn)$.
-One crucial operation during NTT is modular multiplication, which ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial 
+One crucial operation during NTT is modular reduction, which ensures that the polynomial coefficients lie within manageable bounds while still keeping the initial 
 security properties. However, the higher the security degree, the more convoluted these operations become and hence resources such as occupied area or power consumption 
 need to be preserved.
 
-For this reason, we strive to provide an evaluation of modular multiplication methods targeted on digital platforms, in order to be aware of possible bottlenecks 
+For this reason, we aim to provide an evaluation of modular multiplication methods targeted on digital platforms, in order to be aware of possible bottlenecks 
 or caveats during the implementation of such schemes. In this study, we will mainly discuss the Montgomery Reduction, Barrett Reduction and possible variations of them
 in the context of lattice-based schemes on FPGA/ASIC.
 
 
 Montgomery Reduction \cite{montgomery1985modular} is well-known for its efficiency in modular arithmetic due to replacing classical long division with bitwise operations, and by introducing the Montgomery form,
-which is a precomputation step that facilitates for a faster, non-traditional division operation.
+which is a precomputation step that facilitates a faster, non-traditional division operation.
 On the other hand, Barrett's modular multiplication algorithm \cite{barrett1986implementing} is more robust to changes in modulus due to the introduction of a precomputation step which highly depends on the modulus and
 its bit width. The inclusion of this step enables the algorithm to eliminate division in favor of less expensive multiplication, making it efficient.
 
 
-A comparison between the Montgomery and Barrett modular multipliers has been carried out in \cite{kong2006comparison} on a Xilinx Virtex 2 FPGA platform using VHDL and a general modulus.
+A comparison between the Montgomery and Barrett modular multipliers has been carried out in \cite{kong2006comparison} on a Xilinx Virtex 2 FPGA platform using VHDL and a general modulus
+(i.e. modulus without a specific structure, as seen in other studies).
 The goal was to compare area and timing results when computing $C = A \cdot B \mod M$, where $A$, $B$, $C$, $M$ are all $n$-bit integers with lengths up to 32 bits.
 For the Montgomery multipliers, four evaluation methods have been employed, and namely high-radix, separated/interleaved structure, trivial digit selection and quotient digit pipelining.
 As for the Barrett multiplier, an improved separated method has been applied: $A \cdot B$ is precomputed by using the inverse of the modulus, $M^{-1}$.
-Intermediate area results for high-radix separated/interleaved Montgomery reduction with radix $r = 2^{k}$ show that: for the interleaved  method, the area required in FPGA slices is higher
-at smaller $k$-values (where k is the word length or bits per digit), but as $k$ increases, the results for both the interleaved and separated methods converge to the same point, as depicted below:
+Intermediate area results for high-radix separated/interleaved Montgomery reduction with radix (number base) $r = 2^{k}$ show that: for the interleaved  method, the area required in FPGA slices is higher
+at smaller $k$-values (where k is the word length or bits per digit), but as $k$ increases, the results for both the interleaved and separated methods converge to the same point, as depicted in \hyperref[fig:interleaved-separated-area]{Figure~\ref{fig:interleaved-separated-area}}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/interleaved-separated-area.png}
+  \caption{Area of Interleaved \& Separated Structures at Different Radices \cite{kong2006comparison}}
+  \label{fig:interleaved-separated-area}
+\end{figure}
+
 The final results show that  for the current setup with a general modulus, the choice between Montgomery and Barrett highly depends on the word length. However, for word lengths up to 16 bits,
-Barrett's reduction seems to be the appropriate choice.
+Barrett's reduction with the precomputed inverse of the modulus seems to be the appropriate choice.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/mod-mult-diff-wordlengths.png}
+  \caption{Comparison of areas of modular multipliers at different wordlengths \cite{kong2006comparison}}
+  \label{fig:mod-mult-diff-wordlengths}
+\end{figure}
 
 A design space study made on modular multipliers implemented on ASIC for Fully-Homomorphic Encryption is presented in \cite{10129292}. The implementation is carried out in bit-parallel and bit-serial
 designs, both at the system-level and at the block-level. The results show that at the block-level, bit-parallel multipliers are more area- and power-efficient compared to bit-serial designs.
-The final conclusion states that the Montgomery modular multiplication with a constrained modulus turns out to be the most efficient design in terms of area and power consumption both at the system
+The final conclusion states that the Montgomery modular multiplication with a constrained modulus \footnote{it must follow specific properties, like M $\equiv 1 \mod 2N$, which restricts the number of possible moduli.}  turns out to be the most efficient design in terms of area and power consumption, both at the system
 level and at the block level. This ensures efficient polynomial reduction in FHE on ASIC platforms.
 
+At a larger scale, modular reduction is an important operation within NTT, which is widely used in lattice-based schemes. This transformation is usually employed on butterfly cores, which are mathematical structures that allow for
+efficient modular polynomial operations by reducing the complexity of multiplying polynomials. By optimizing the modular reduction operation, we obtain more efficient polynomial multiplication. In \cite{9603378}, several 
+improvements  for modular reduction in NTT for the post-quantum scheme Kyber \cite{bos2018crystals} are presented: pipelining, the KRED/K2RED functions \cite{longa2016speeding} and parallelization. The KRED optimization 
+particularly contributes to the parallelization process due to the application of vector integer instructions in their implementation. Due to parallelism, pipelining is also improved. The results in \cite{9603378} state 
+that the NTT core in this design achieves over a 44\% performance improvement, measured by the $A \times T$ metric (area $\times$ time), on an Artix-7 FPGA.
 
-% gonna use them to smoothly transition to the background?
-% To further mitigate these potential losses, we need to firstly understand the complexity of the operations
-% performed within these methods.
-
-
-% which we are discussing in the context of Post-Quantum Cryptography and 
-% Fully-Homomorphic Encryption. Moreover, we are also discussing the Shift \& Add method in combination with modular reduction, which is the basis for other modular reduction methods.
-
-% \texttt{(the following sentences are just placeholders for now)}
-
-
-% \paragraph{Our contributions: }In this paper, we want to explore these algorithms, while aiming to create an evaluation of each and every one of them in different scenarios within lattice-based cryptographic methods.
-% , which facilitates
-% the usage of RLWE in complex lattice-based applications such as Quantum-Safe Cryptographic Schemes and Fully-Homomorphic Encryption.
-
-% Lattice-based applications such as Quantum-Safe Schemes and Fully-Homomorphic Encryption make use of the polynomial representation within the ring for expressing asymmetric designs. H
-% However, polynomial multiplication is still an expensive operation, especially in the context of devices with limited resources such as FPGA or ASIC. The basic encryption operations require a set of RLWE parameters which define the computational properties
-% of the ring structure and determine the level of security (i.e. polynomial degree). Even though the security level can be optimized, the lowest acceptable security level still yields a large ring object, of the order of millions of bits. (add reference here)
-% The ring structure not only reinforces the "hardness" of 
-% the initial problem, but also allows for operations on encrypted data to be performed. Both of these features facilitate the implementation of post-quantum cryptographic
-% algorithms and fully-homomorphic encryption schemes.
-%  by "exploiting" the structure of the LWE samples, which results in a ring over a finite
-% field of moduli. The ring structure reduces the information needed to describe each vector $\textbf{a}_i$ by deriving each one of them from $\textbf{a}_1$ - this reduces the key sizes from $n^2$ to $n$. 
-
-% ($F_q[X] / \Phi[X]$ \texttt{maybe this belongs better in the background?})
-
-% Provide an introduction to your work (typically 1 to 2 pages, but can also be more for your full thesis).
-% For this short ISW report, focus on \textbf{Introduction + Background + Conclusion} and cover them it at least \textbf{4 pages} (excluding the titlepage/abstract and bibliography).
-
-% The introduction is structured like a longer version of the abstract.
-% You start with a paragraph or two of general background, getting more and more specific, and culminating in a clear motivation for your main research problem or thesis goal.
-% This should be a convincing and well-founded story: Readers will stop reading here if they do not see the relevance of your work for them.
-% If you have a central research question, state it clearly.
-% If there are particular papers relevant to your work, such as central techniques you used, designs you built on or evaluated, or similar, be sure to include citations here.
-
-% Then, provide a summary and relevant details to characterize your contribution and approach for solving the research problem.
-% The introduction is generally written in present tense and active form -- everything happens now and is done by ``we'', the author(s):
-% ``We provide an implementation'', ``We discuss'', ``We evaluate'', etc.
-% The focus is on your final \emph{outcome} and gained insights, not on your personal journey to get there; for example, do include facts like the runtime of your implementation if it is relevant for judging its performance, but do not include how many months it took you to produce this implementation.
-% Provide a concise summary of your approach and your main findings, including all details already given in the Abstract and some more details.
-% This includes a clear definition of the scope of your work and your assumptions, such as your attacker model, hardware/software used, and similar.
-% There should be no big (positive or negative) surprises on your results for the reader in the remaining paper, except for technical details on \emph{how} you achieved your results.
-% If there is a useful central figure that helps explain and contextualize your contribution, or a summary table that compares your contribution with related work, you can add it here.
-% Finish this part with a (bulleted) list of around 3 to 5 main scientific contributions, such as new ideas and techniques, applications of techniques to new application areas, novel implementation results, performance numbers, and similar.
-
-% At some point in your thesis, you need to discuss relevant related work.
-% Depending on what your work contributes, a good spot for this discussion can be in the \emph{Introduction}, in the \emph{Background} section, or in a final \emph{Discussion} section.
-
-\paragraph{Outline.}
-% The introduction ends with an outline (aka mapping), explaining how this paper is structured:
-% In Section \ref{sec:background}, we introduce the relevant background on some topic.
-% (\dots)
-% Finally, in Section \ref{sec:conclusion}, we conclude with a discussion of our findings and directions for future work.
-
+% \paragraph{Outline.}
 
 %--- BACKGROUND ----------------------------------------------------------------
 
@@ -201,23 +171,16 @@ level and at the block level. This ensures efficient polynomial reduction in FHE
 \label{sec:background}
 
 \subsection{Notation}
+We use $\Lambda(a_1, a_2,..., a_n)$ to represent a lattice and its basis vector. Gaussian distributions are denoted with $\rho$, whereas Gaussian error distributions are marked by $\chi$.
+Vector norms are represented by $|| \cdot ||$, and vector dot products by $\langle \ ,\ \rangle$.
 We use $\mathbb{Z}_q$ to represent the set of integers modulo a quotient $q \geq 2$. We represent the set of $d$-dimensional vectors in $\mathbb{Z}^d_q$
-with $d \geq 1$.
+with $d \geq 1$. The ring of all polynomials over a finite field of moduli is represented by $\mathbb{Z}_q / \langle x^d + 1\rangle$, where $x^d + 1$ is the modulus polynomial 
+(i.e. all elements of the ring are reduced by this modulus).
 \subsection{Briefly on to Lattices}
 In group theory, a lattice is a discrete subgroup of the additive group, or a free abelian group of dimension $m$ which spans the vector space $\mathbb{R}^m$ and has a periodic structure. 
 Each point in the lattice is separated by a minimum distance, a property that underpins the periodic nature of the lattice structure. Coordinate-wise addition or subtraction of two lattice-points 
 produces a new lattice-point.
 
-% \begin{figure}[h]
-%   \centering
-%   \includegraphics[width=0.6\textwidth]{figures/lattice-in-euclidean-space.png}
-%   \caption{A lattice in Euclidean plane ($\mathbb{R}^2$) \cite{latticesIntro2004}}
-%   \label{fig:LatticeInEuclideanPlane}
-% \end{figure}
-
-
-
-% More specifically, the lattice vectors are represented in the figure below:
 
 \begin{figure}[h]
   \centering
@@ -233,7 +196,8 @@ Mathematically, given $n$ linearly independent vectors $a_1, a_2,..., a_n \in \m
   \Lambda(a_1, a_2,..., a_n) = \left\{\sum x_ia_i\ |\ x_i \in \mathbb{Z}\right\} 
 \end{equation*}
 
-In simpler terms, a lattice can be described as a vector space limited to integer multiples of its basis vectors.
+In simpler terms, a lattice can be described as a vector space limited to integer multiples of its basis vectors.  A depiction of a bi-dimensional lattice can be observed in 
+\hyperref[fig:LatticeWithLatticeVectors]{Figure~\ref{fig:LatticeWithLatticeVectors}}.
 
 The minimum distance of a lattice in a norm $||\cdot||$ is the length of the shortest nonzero lattice vector. If the norm is unspecified, the default
 value is the Euclidean norm.
@@ -247,7 +211,7 @@ we define the discrete Gaussian distribution as follows \cite{WCToAVGCase}:
 \end{equation*}
 
 In other words, when the discrete Gaussian distribution is applied to a lattice vector near a given center, we can generate a noisy version of the center vector, which adds controlled randomness 
-to the cryptographic application.
+to the cryptographic application. Worst-case lattice problems such as Learning with Errors use this Gaussian distribution to create noise for the purpose of hardness.
 
 % \cite{discreteGMeasuresLattices}
 \subsection{Learning with Errors}
@@ -292,7 +256,7 @@ Cryptographic applications often need at least  $n$ vectors of $n$ dimensions, w
 security level increases, which makes the problem inefficient for practical cryptographic applications.
 The Ring Learning with Errors problem \cite{lyubashevsky2010ideal} was introduced by Vladimir Lyubashevsky as an optimization of the initial LWE problem.
 
-
+% \newpage
 \subsection{Ring Learning with Errors}
 Lyubashevsky's solution \cite{lyubashevsky2010ideal} suggests a more lightweight and secure approach in implementing encryption algorithms by applying the ring structure over a finite field of moduli, onto the polynomial representation 
 of public and private keys. With that being said, using polynomials within a ring structure instead of vectors and matrices should be more efficient storage-wise, leading to space complexities of $O(n)$.\\
@@ -310,31 +274,43 @@ to ensure that the polynomial degree does not exceed $d-1$ (this needs to go int
 The additional requirements for this change  to take place is having the dimension $d$ be a power of two, which further guarantees that $x^d + 1$ is irreducible over the rationals in order to provide
 a quotient ring structure.
 
-With that being said, the R-LWE equivalent of the original LWE problem would be:
+With that being said, the \gls{rlwe} equivalent of the original LWE problem would be:
 \begin{equation*}
   a^{(i)}(x) \cdot s(x) + e^{(i)}(x) \approx b^{(i)}(x) \pmod{x^d + 1, q}
   \label{The Ring-Learning with Errors Problem}
 \end{equation*}
 
 
-\paragraph{Hardness.} Solving the R-LWE problem implies a solution to the worst-case lattice problems, which are restricted to the family of $ideal\ lattices$ \cite{lyubashevsky2010ideal}. Ideal lattices are mathematical
+\paragraph{Hardness.} Solving the \gls{rlwe} problem implies a solution to the worst-case lattice problems, which are restricted to the family of $ideal\ lattices$ \cite{lyubashevsky2010ideal}. Ideal lattices are mathematical
 structures that satisfy a certain symmetry condition: if ($a_1, a_2,..., a_d$) is a lattice vector, then so is the ring representation of it ($x_2,...,x_n, -x_1$).
 Therefore, we can conclude that no changes over the hardness would occur in the context of Ring-Learning with Errors.
 % \subsection{Polynomial multiplication}
-\subsection{Modular reduction and modular multiplication}
-Efficient modular multiplication and reduction are at the heart of many R-LWE cryptographic applications, which implicitly use polynomial multiplication due to the ring representation.
-If we recall the R-LWE problem formula from the previous chapter
-we can observe three main operations that take place:
+\subsection{Polynomial Multiplication and Modular Reduction}
+% \texttt{(Here I am not entirely sure how much in depth I should go, but I think that the description below does not suffice).}\\
+Ring-Learning with Errors brings optimizations to Learning with Errors only space-wise through the ring structure and polynomial representation.
+However, multiplying polynomials still yields $O(n^{2})$ time complexity in case of naive polynomial multiplication. This approach will do modular
+multiplication of all polynomial coefficients with each other.
+To reduce the complexity to quasi-linear time, Number Theoretic Transform (NTT) is applied and thus, the time complexity drops to $O(nlogn)$.
+Polynomial multiplication needs two types of multiplication:
 \begin{enumerate}
-  \item Polynomial multiplication between polynomials and their coefficients
-  \item Modular multiplication, which involves multiplication between two terms that are then reduced by a modulus.\\
-        In the case of R-LWE , the multiplication takes place between polynomials and the result is reduced by $x^n + 1$.
-  \item Modular reduction, which can be easily observed in R-LWE, is done firstly to reduce the polynomial degree of the polynomial multiplication result by $x^n + 1$,
-  then, the polynomial coefficients are reduced modulo $q$ to ensure they lie within a certain range.
+  \item Multiplication between polynomial coefficients and \textit{twiddle factors}.
+  \item Element-wise multiplication between polynomial coefficients
 \end{enumerate}
+In both cases, modular reduction techniques are applied. However, since modular reduction algorithms such as Montgomery and Barrett require precomputation steps, it is crucial to find reduction optimization methods
+in order to streamline the NTT-step. If this transformation is done efficiently, the performance of polynomial multiplication will increase significantly, and resources such as area, power and time are therefore preserved.
+% Efficient modular multiplication and reduction are at the heart of many R-LWE cryptographic applications, which implicitly use polynomial multiplication due to the ring representation.
+% If we recall the R-LWE problem formula from the previous chapter
+% we can observe three main operations that take place:
+% \begin{enumerate}
+%   \item Polynomial multiplication between polynomials and their coefficients
+%   \item Modular multiplication, which involves multiplication between two terms that are then reduced by a modulus.\\
+%         In the case of R-LWE , the multiplication takes place between polynomials and the result is reduced by $x^n + 1$.
+%   \item Modular reduction, which can be easily observed in R-LWE, is done firstly to reduce the polynomial degree of the polynomial multiplication result by $x^n + 1$,
+%   then, the polynomial coefficients are reduced modulo $q$ to ensure they lie within a certain range.
+% \end{enumerate}
 
-To streamline cryptographic schemes, it is essential that these operations are performed efficiently. One of the existing drawbacks is the modulo operation, which, 
-when performed using traditional long division, is highly inefficient.
+% To streamline cryptographic schemes, it is essential that these operations are performed efficiently. One of the existing drawbacks is the modulo operation, which, 
+% when performed using traditional long division, is highly inefficient.
 
 
 \subsection{Montgomery Reduction}
@@ -342,9 +318,9 @@ Montgomery Reduction \cite{montgomery1985modular} is an efficient method that pe
 Its efficiency comes from replacing traditional long division with simple bitwise operations, as well as from precomputing the input values into the "Montgomery form''.
 % The Montgomery form represents the input by using residue classes without affecting modular addition or subtraction. 
 
-\paragraph{Montgomery Form.} We firstly define $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix (number base) $R = 2^n$, where 
+\paragraph{Montgomery Form.} We firstly define a modulus $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix (number base) $R = 2^n$, where 
 $n = machine\ word\ size$, and $gcd(Q, R) = 1$, with $R > Q$. This choice of $R$ ensures that the computations are inexpensive by making the shifting operation possible.
-If $x$ is an integer, its Q-residue conversion is:
+If $x$ is an integer, its Montgomery form is:
 \begin{equation*}
   xR \mod Q. 
 \end{equation*}
@@ -369,7 +345,6 @@ By introducing the inverse, $R^{-1}$, the additional $R$ is reduced as follows:
 Thus, we have converted the multiplication between $x, y$ in Montgomery form.
 
 % \newpage
-
 \paragraph{Reduction Algorithm.} 
 Furthermore, we will discuss how to apply modular reduction to an integer in Montgomery form by outlining the reduction algorithm below.
 
@@ -436,7 +411,7 @@ $2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xy
 
 % However, this is not the case with multiplication, where the result lies within the range $[0, Q^2 - 2Q + 1]$. To reduce the result into the range $[0, Q-1]$, we need to perform division,
 % which the bottleneck in many hardware applications. By using the Montgomery form, we ensure that long division is avoided by representing the inputs as multiples of $R$.
-% \newpage
+\newpage
 \subsection{Barrett Reduction}
 Barrett's reduction \cite{barrett1986implementing} started out as a technique provided by Paul Barrett in 1986 to obtain a high-speed implementation of the RSA encryption algorithm
 on a digital signal processing chip. This technique achieved a two and a half second encryption time on average for $512$ bit exponent and modulus, on a first generation digital signal processor (DSP).
@@ -454,8 +429,37 @@ However, this method is not suitable for hardware implementation due to the divi
   &q = \lfloor t / m \rfloor\\
   &r = t - q \cdot m.
 \end{align*}
-In this regard, Barrett's algorithm introduces the precomputation step where the floating point term $\frac{1}{m}$ is approximated by truncating it after the first $2k$ bits found after $(.)$,
-and brought to a higher precision by a shift to the left by the radix $R$ which scales it. The value of the precomputed term will not change as long as the value of the modulus remains constant. \cite{4272869}
+In this regard, Barrett's algorithm introduces the precomputation step where the floating point term $\frac{1}{m}$ is approximated by truncating the least $2k$ bits found after $(.)$,
+and converted to an integer by a shift to the left by the radix $R$. The approximation step is shown in \hyperref[fig:ApproximationStepBarrett]{Figure~\ref{fig:ApproximationStepBarrett}}.
+% \textbf{Modulus} $m = 7069$ \textbf{is 13 bits long. Hence} $k = 13$.\\
+% \begin{align*}
+% \frac{1}{m} & = 0.00014146272457207525816947234_{10} \\
+%             & = 0.000000000000010010100010101011000111\ldots_{2} \\
+%             & \approx \textcolor{blue}{0.000000000000010010100010101}_{2} 
+%               \quad \textcolor{blue}{\text{Truncate least } 2k=26 \text{ bits}}
+% \end{align*}
+% % \]
+
+% % \[
+% % 0.000141456723213958_{10}
+% % \]
+
+% % \[
+% \begin{align*}
+% \mu & = \textcolor{blue}{0.000000000000010010100010101_{2}} \ll 26 
+%       \quad \text{multiply by } 2^{26}\\
+%     & = 10010100010101_{2} \\
+%     & = 9493_{10}
+% \end{align*}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/mu-approximation-step.png}
+  \caption{Approximation step in Barrett's reduction \cite{ModArith}}
+  \label{fig:ApproximationStepBarrett}
+\end{figure}
+\newpage
+The value of the precomputed term will not change as long as the value of the modulus remains constant \cite{4272869}.
 Direct division is as well avoided in the approximation step of the quotient (line 3 in the algorithm) through the division by the radix, which represents a shift to the right in hardware implementations.
 
 \begin{algorithm}
@@ -467,7 +471,7 @@ Direct division is as well avoided in the approximation step of the quotient (li
   \ENSURE \(X \cdot Y \mod M \)
   \STATE \( T \leftarrow X \cdot Y \)
   \STATE \( \mu \leftarrow \lfloor(1 / M) \cdot 2^{2k}\rfloor \)
-  \STATE \( q \leftarrow \lfloor (T * \mu) / 2^{2k} \rfloor \)
+  \STATE \( q \leftarrow \lfloor (T \cdot \mu) / 2^{2k} \rfloor \)
   \STATE \( r \leftarrow T - q \cdot M \)
   \IF{ \( r \geq M \) }
       \STATE \( r \leftarrow r - M \)
@@ -475,23 +479,21 @@ Direct division is as well avoided in the approximation step of the quotient (li
   \RETURN \( r \)
   \end{algorithmic}
 \end{algorithm}
-
+% \newpage
 \paragraph{Mathematically,} the formula for finding the remainder of $(x \cdot y \mod M)$ is given by:
-
 \begin{align*}
   &r = T - \left\lfloor \frac{T \cdot \lfloor \frac{2^{2k}}{m}\rfloor}{2^{2k}} \right\rfloor \cdot M
 \end{align*}
-
 Which is further equal to:
 \begin{align*}
   &r = T - \left\lfloor \frac{T \cdot \mu}{R} \right\rfloor \cdot M
 \end{align*}
-
 Where $T = x \cdot y$ and R is the radix.
 
 % \newpage
 \subsection{Shift \& Add}
-
+%  \texttt{(Shift and Add should be common knowledge, and I'm also not really discussing anything related to it in the introduction
+%  since this method is intuitively applied in hardware algorithms)}\\
 Shift \& Add is a classic multiplication method which is mainly employed in in the context of hardware implementation.
 This method is at the heart of many algorithms, ranging from cryptographic applications to graphics and image processing due to the lightweight
 approach it has over the multiplication. The main idea stands in leveraging bitshift operations which are equivalent to either multiplication or division.
@@ -517,96 +519,18 @@ Therefore, given two integers $x, y$ in binary representation, the algorithm is 
 
 We start from the least significant bit of either of the numbers, in our case $x$. If the current bit is $1$, we shift the value to the left by $i$ and
 we add it to the $Prod$ variable. Otherwise, if the bit value is 0, nothing is done. At the end, the value of the product is returned.
-
-
-% Ring Learning with Errors is at the core of many lattice-based algorithms and involves the manipulation of ring objects in polynomial form.
-
-% Every section starts with an introductory paragraph that outlines the contents and purpose of the section:
-
-% In this section, we provide some usage examples for bibliography and citations with \texttt{biblatex} (Section \ref{subsec:bib}) and writing tips (Section \ref{subsec:hints}).
-
-% \subsection{Citations}
-% \label{subsec:bib}
-
-% This is an example of how to specify and cite
-% a book \cite{AESbook},
-% a journal article \cite{bstjShannon49},
-% a conference article \cite{spKocherHFGGHHLM019},
-% an informal report \cite{iacrSchneierFKR15},
-% and a website \cite{webIAIK21}.
-% We can also add the authors' names to the citation:
-% AES is a block cipher defined by \textcite{AESbook}.
-
-% \subsection{Writing Style}
-% \label{subsec:hints}
-
-% Writing style recommendations for English differ a bit from German:
-% \begin{itemize}
-%   \item Prefer short, clear sentences over long, convoluted sentences.
-%   \item Prefer active voice, well-defined subjects, and meaningful verbs over passive voice, vague subjects, and vague verbs.
-%   \item Do not concatenate too many nouns.
-%   \item When you refer to the same thing several times consecutively, call it by the same name instead of inventing synonyms. (``Wortwiederholung'' is ok.)
-% \end{itemize}
-% Consider using a style checker such as Grammarly -- ask your supervisor for details.
-
-% Rules for placing commas in English are quite easy, but also quite different from German.
-% The most important ones include:
-% \begin{itemize}
-%   \item No comma before ``that'': ``Due to the fact that\dots''
-%   \item No comma before infinitives: ``We did this to find out\dots''
-%   \item No comma between subject and verb (be careful not to confuse with introductory clauses): ``Completing the list is essential.''
-%   \item No comma before indispensable relative clauses: ``The function returns the key which has the highest score.''
-%   \item Put a comma before and after dispensable relative clauses and other non-essential phrases: ``The key, which consists of two subkeys, is generated\dots''
-%   \item Put a comma after introductory clauses: ``Consequently, we use\dots''; ``After the last step, we return\dots''; ``To complete the list, we add\dots''.
-%   \item Put a comma before and after ``e.g.'' and ``i.e.'': ``A block cipher, e.g., AES.''
-%     Consider using ``for example/for instance/such as'' and ``that is'' instead.
-%   \item Many authors put a comma before ``and, but, for, or, nor, so, yet'' when they connect two independent clauses: ``We repeated the experiment, but the result was different.''
-%     This is a matter of (your or your supervisor's) preference.
-%   \item Many authors put a comma before ``and, or'' in the last element of an enumeration of three or more elements: ``Alice and Bob'', but ``Alice, Bob, and Caesar.''
-%     This ``Oxford comma'' is a matter of (your or your supervisor's) preference.
-% \end{itemize}
-
-% Typesetting and other hints:
-% \begin{itemize}
-%   \item To typeset English `single' and ``double'' quotation marks in \LaTeX, start with \verb|`| (grave accent) and end with \verb|'| (typewriter apostrophe).
-%   \item Display math formulas are introduced in the previous sentence and include punctuation (often separated by a thin space \verb|\,|): The ciphertext is computed as
-%     \[C = E_K(P)\,.\]
-%   \item Captions are usually above tables, but below figures, and end with a full stop.
-%   \item ``This key has 128 bits'', but ``128-bit key''.
-%   \item References are typically capitalized and separated by a non-breaking space \verb|~|: ``Section~\ref{subsec:bib}''.
-%     Try \verb|\autoref| (\autoref{subsec:bib}) or the \verb|cleveref| package. % \Cref{sec:bib}
-% \end{itemize}
-
-% Figure \ref{fig:diagram} illustrates the data of Table \ref{tab:data}.
-
-% \begin{figure}[htpb]
-%   \centering
-%   %\includegraphics[width=.5\textwidth]{figures/myimage.png}
-%   \caption{Concise descriptive caption for the figure (printed below the figure).}
-%   \label{fig:diagram}
-% \end{figure}
-
-% \begin{table}[b]
-%   \caption{Concise descriptive caption for the table (printed above the table).}
-%   \label{tab:data}
-%   \centering
-%   \begin{tabular}{lrr} % text columns: {l}eft-aligned, number columns: {r}ight-aligned
-%     \toprule
-%     Item   & \multicolumn{2}{c}{Properties} \\
-%              \cmidrule{2-3}
-%            & First          & Second \\
-%     \midrule
-%     Apple  & 5              & 100 \\
-%     Pear   & 10             & 99 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-
 %--- CONCLUSION ----------------------------------------------------------------
-
+% \newpage
 \section{Conclusion}
 \label{sec:conclusion}
+In this paper, we explore different implementations and designs of the Montgomery and Barrett modular multipliers, on FPGA and ASIC, for lattice-based cryptosystems.
+From \cite{kong2006comparison} we learn that separated and interleaved designs of the Montgomery algorithm yield the same results on an FPGA as the word size increases.
+Additionally, for word lengths up to 16 bits, Barrett's reduction with a precomputed inverse of the modulus performs better. 
+For FHE ASIC implementations, bit parallel designs are more efficient than bit-serial implementations in terms of area- and power consumption. A Montgomery multiplier 
+with a constrained modulus yields the best results area- and power-wise by limiting the range of possible modulus values.
+Under the circumstances of post-quantum cryptographic schemes, the Number Theoretic Transform is optimized using algorithms that employ vector integer instructions in
+their implementation. This detail facilitates parallelization and pipelining, which streamline the modular reduction process.
+Finally, we can infer that for both FPGA and ASIC platforms, parallel designs for modular multipliers manage to preserve the most resources.
 
 % Provide the conclusions of your short report (max. $\frac{1}{2}$ page).
 
@@ -621,15 +545,26 @@ we add it to the $Prod$ variable. Otherwise, if the bit value is 0, nothing is d
 
 % Finally, you can point out open problems that call for future work, but phrased in a positive way -- as opportunities.
 % There should be no complete surprises (such as significant shortcomings not discussed earlier), but you can provide some new thoughts and ideas.
-% %--- ACRONYMS --------------------------------------------------------------
-% \newacronym{RLWE}{RLWE}{Ring Learning with Errors}
-% \newacronym{LWE}{LWE}{Learning with Errors}
-% \glsaddall
-% \printglossary[type=\acronymtype, title={List of abbreviations}, nonumberlist]
-%--- BIBLIOGRAPHY --------------------------------------------------------------
+%--- ACRONYMS --------------------------------------------------------------
+% \newglossaryentry{lwe}{
+%     name={Learning with Errors},
+%     description={Learning with Errors}
+% }
+% \newacronym{lwe}{LWE}{Learning with Errors}
 
+% \newglossaryentry{rlwe}{
+%     name={Ring Learning with Errors},
+%     description={Ring-Learning with Errors}
+% }
+% \newacronym{rlwe}{R-LWE}{Ring Learning with Errors}
+
+
+% \glsaddall
+% \printglossary
+%--- BIBLIOGRAPHY --------------------------------------------------------------
+\newpage
 \printbibliography[heading=subbibliography]
 
-
+% \input{abbreviations.tex}
 
 \end{document}
