@@ -46,7 +46,7 @@ maxbibnames=20]{biblatex} % to generate the bibliography
 
 %--- FRONT MATTER --------------------------------------------------------------
 
-\title{Evaluation of modular multiplication methods in lattice-based cryptography on FPGA/ASIC}
+\title{Evaluation of modular multiplication methods used in lattice-based cryptography on FPGA/ASIC}
 \author{Teodora-Alexandra Alexandrescu}
 \date{Introduction to Scientific Working 2024/25\bigskip\bigskip}
 \publishers{\normalsize
@@ -69,7 +69,7 @@ the performance costs will also be minimal. However, the higher the polynomial d
 To solve this problem, the concept of modular multiplication has been applied, where each coefficient in the polynomial result needs to be reduced modulo a quotient $q$ in order to reduce the coefficients. Thus, modular multiplication is the most fundamental resource in cryptographic schemes. This arithmetic operation, 
 if performed efficiently, can bring a significant impact over the performance of lattice-based cryptographic implementations.\\
 In this work, we address the problem of efficiency in terms of area and power consumption on digital platforms such as FPGA/ASIC
-and analyze three well-known modular multipliers for evaluation: Montgomery Reduction, Barret's Reduction and Shift \& Add. Furthermore, we seek to distinguish between two novel usecases of lattice-based cryptography,
+and analyze three well-known modular multipliers for evaluation: Montgomery Reduction, Barrett's Reduction and Shift \& Add. Furthermore, we seek to distinguish between two novel usecases of lattice-based cryptography,
 namely Post-Quantum Cryptography and Fully-Homomorphic Encryption, based on how they utilize the NP-Hard Ring Learning with Errors problem.
 
 % Provide an abstract of your report (at most $\frac{1}{2}$ page for this report, typically 1 to 3 paragraphs).
@@ -107,7 +107,7 @@ in the context of platforms like FPGA or ASIC, where area and power are limited 
 Learning with Errors problem \cite{regev2010learning}, which is considered to be as hard as an NP-hard problem \cite{micciancio2013hardness}.
 
 Fully-Homomorphic Encryption \& Post-Quantum Cryptography are at the forefront of cryptographic research. While FHE enables computation on encrypted data, PQC
-addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as Genotype Imputation \cite{gursoy2022privacy} or CRYSTALS-DILITHIUM \cite{2018crystals} are 
+addresses threats posed by quantum-counterparts. Both FHE and PQC schemes such as Genotype Imputation \cite{gursoy2022privacy} or NTTRU \cite{cryptoeprint:2019/040} are 
 lattice-based due to how they use the (Ring -) Learning with Errors properties: the ring structure and polynomial representation, usually employed during encryption.
 
 At the heart of these lattice-based constructions lies polynomial multiplication, which is the most computationally intensive operation in Ring Learning 
@@ -117,7 +117,7 @@ security properties. However, the higher the security degree, the more convolute
 need to be preserved.
 
 For this reason, we aim to provide an evaluation of modular multiplication methods targeted on digital platforms, in order to be aware of possible bottlenecks 
-or caveats during the implementation of such schemes. In this study, we will mainly discuss the Montgomery Reduction, Barrett Reduction and possible variations of them
+or caveats during the implementation of such schemes. In this study, we will mainly discuss the Montgomery Reduction, Barrett Reduction and the Shift \& Add algorithm
 in the context of lattice-based schemes on FPGA/ASIC.
 
 
@@ -152,10 +152,13 @@ Barrett's reduction with the precomputed inverse of the modulus seems to be the 
   \label{fig:mod-mult-diff-wordlengths}
 \end{figure}
 
-A design space study made on modular multipliers implemented on ASIC for Fully-Homomorphic Encryption is presented in \cite{10129292}. The implementation is carried out in bit-parallel and bit-serial
-designs, both at the system-level and at the block-level. The results show that at the block-level, bit-parallel multipliers are more area- and power-efficient compared to bit-serial designs.
-The final conclusion states that the Montgomery modular multiplication with a constrained modulus \footnote{it must follow specific properties, like M $\equiv 1 \mod 2N$, which restricts the number of possible moduli.}  turns out to be the most efficient design in terms of area and power consumption, both at the system
-level and at the block level. This ensures efficient polynomial reduction in FHE on ASIC platforms.
+Shift \& Add is a standard multiplication method used in digital design. Its significance stems from the ability to reduce different algorithms (or particular parts of them) to simple operations
+like bitshifts and additions. In \cite{sreehari2012application} it is proven that modular reduction speed is increased by $80$\% for a modified Barrett reduction algorithm when choosing Mersenne/ quasi-Mersenne numbers as moduli.
+By exploiting their properties, the overall long-integer multiplication speed is increased when using simple shift and addition operations in the reduction step.  
+
+A design space study of modular multipliers for Fully-Homomorphic Encryption (FHE) implemented on ASIC is presented in \cite{10129292}. The study explores both bit-parallel and bit-serial designs at the system and block levels. 
+The results indicate that bit-parallel multipliers are more area- and power-efficient than bit-serial designs at the block level. Finally, the study concludes that Montgomery modular multiplication with a constrained modulus \footnote{it must follow specific properties, like M $\equiv 1 \mod 2N$, which restricts the number of possible moduli.}
+offers the most efficient design in terms of area and power consumption, at both the system and block levels. This ensures optimal polynomial reduction for FHE on ASIC platforms.
 
 At a larger scale, modular reduction is an important operation within NTT, which is widely used in lattice-based schemes. This transformation is usually employed on butterfly cores, which are mathematical structures that allow for
 efficient modular polynomial operations by reducing the complexity of multiplying polynomials. By optimizing the modular reduction operation, we obtain more efficient polynomial multiplication. In \cite{9603378}, several 
@@ -175,8 +178,8 @@ We use $\Lambda(a_1, a_2,..., a_n)$ to represent a lattice and its basis vector.
 Vector norms are represented by $|| \cdot ||$, and vector dot products by $\langle \ ,\ \rangle$.
 We use $\mathbb{Z}_q$ to represent the set of integers modulo a quotient $q \geq 2$. We represent the set of $d$-dimensional vectors in $\mathbb{Z}^d_q$
 with $d \geq 1$. The ring of all polynomials over a finite field of moduli is represented by $\mathbb{Z}_q / \langle x^d + 1\rangle$, where $x^d + 1$ is the modulus polynomial 
-(i.e. all elements of the ring are reduced by this modulus).
-\subsection{Briefly on to Lattices}
+(i.e. all elements of the ring are reduced by this modulus). Mersenne primes are denoted as $M_p$.
+\subsection{Brief description of Lattices}
 In group theory, a lattice is a discrete subgroup of the additive group, or a free abelian group of dimension $m$ which spans the vector space $\mathbb{R}^m$ and has a periodic structure. 
 Each point in the lattice is separated by a minimum distance, a property that underpins the periodic nature of the lattice structure. Coordinate-wise addition or subtraction of two lattice-points 
 produces a new lattice-point.
@@ -315,7 +318,7 @@ in order to streamline the NTT-step. If this transformation is done efficiently,
 
 \subsection{Montgomery Reduction}
 Montgomery Reduction \cite{montgomery1985modular} is an efficient method that performs modular reduction after integer multiplication ($x \cdot y\ mod\ Q$).
-Its efficiency comes from replacing traditional long division with simple bitwise operations, as well as from precomputing the input values into the "Montgomery form''.
+Its efficiency comes from replacing traditional long division with simple bitwise operations, as well as from precomputing the input values into the ``Montgomery form''.
 % The Montgomery form represents the input by using residue classes without affecting modular addition or subtraction. 
 
 \paragraph{Montgomery Form.} We firstly define a modulus $Q > 1$ such that $\{x \in \mathbb{Z}\ |\ x \equiv r\ mod\ Q\}$. Then we select a radix (number base) $R = 2^n$, where 
@@ -383,7 +386,7 @@ subtractions.
 
 Let $R=2^n$, $gcd(R, Q)=1$, let $Q$ be odd. The multiplicands are numbers in binary representation, $x, y$, where $x = (x_{n-1}, x_{n-2},...,x_{0})_2$ and $0 \leq y \leq Q$. 
 We define an accumulator value whose parity bit determines whether or not the intermediate sum needs to be adjusted by adding $Q$ or not. In both cases, we divide the result by
-$2$, or we shift right by $1.$. After $n$ iterations, the attained result is $xyR^{-1} \mod Q$. \cite{montgomery1985modular}, \cite{7219961}
+$2$, or we shift right by $1$. After $n$ iterations, the attained result is $xyR^{-1} \mod Q$. \cite{montgomery1985modular}, \cite{7219961}
 
 \begin{algorithm}
   \caption{Montgomery Reduction Hardware Implementation}
@@ -497,7 +500,6 @@ Where $T = x \cdot y$ and R is the radix.
 Shift \& Add is a classic multiplication method which is mainly employed in in the context of hardware implementation.
 This method is at the heart of many algorithms, ranging from cryptographic applications to graphics and image processing due to the lightweight
 approach it has over the multiplication. The main idea stands in leveraging bitshift operations which are equivalent to either multiplication or division.
-
 Therefore, given two integers $x, y$ in binary representation, the algorithm is stated as follows:
 
 \begin{algorithm}
@@ -519,13 +521,21 @@ Therefore, given two integers $x, y$ in binary representation, the algorithm is 
 
 We start from the least significant bit of either of the numbers, in our case $x$. If the current bit is $1$, we shift the value to the left by $i$ and
 we add it to the $Prod$ variable. Otherwise, if the bit value is 0, nothing is done. At the end, the value of the product is returned.
+
+Nonetheless, this algorithm is not only well-suited for cutting down the effort of multiplication. In \cite{sreehari2012application}, the reduction step speed 
+is increased significantly when using shifts and additions in combination with Mersenne/Pseudo-Mersenne primes for moduli ($M_p = 2^p - 1$). This improvement 
+stems from the fact that Mersenne primes are numbers that are one less than a power of two, and powers of two are particularly efficient for bitshift operations. 
+Thus, this special kind of modulus is a good candidate for fast modular multiplication implementation on FPGA or ASIC.
 %--- CONCLUSION ----------------------------------------------------------------
 % \newpage
 \section{Conclusion}
 \label{sec:conclusion}
 In this paper, we explore different implementations and designs of the Montgomery and Barrett modular multipliers, on FPGA and ASIC, for lattice-based cryptosystems.
 From \cite{kong2006comparison} we learn that separated and interleaved designs of the Montgomery algorithm yield the same results on an FPGA as the word size increases.
-Additionally, for word lengths up to 16 bits, Barrett's reduction with a precomputed inverse of the modulus performs better. 
+Additionally, for word lengths up to 16 bits, Barrett's reduction with a precomputed inverse of the modulus performs better. In \cite{sreehari2012application}, the speed 
+of long-integer modular multiplication is improved by replacing the reduction step in a modified Barrett algorithm with shifts and additions, leveraging the properties of 
+Mersenne and Pseudo-Mersenne primes.
+
 For FHE ASIC implementations, bit parallel designs are more efficient than bit-serial implementations in terms of area- and power consumption. A Montgomery multiplier 
 with a constrained modulus yields the best results area- and power-wise by limiting the range of possible modulus values.
 Under the circumstances of post-quantum cryptographic schemes, the Number Theoretic Transform is optimized using algorithms that employ vector integer instructions in
