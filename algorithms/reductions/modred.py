@@ -27,14 +27,12 @@ class BarrettReduction(ModularReduction):
   def reduce(self, mult):
     approximated_quotient = (mult * self.mu) >> (2 * self.k)
     remainder = mult - approximated_quotient * self.modulus
-
-    # for i in range(len(remainder)):
-    #   if remainder[i] >= self.modulus:
-    #       remainder[i] -= self.modulus
-
     # This will do a bitmask over the entire np.array() and will thus avoid any
     # looping or branching
     remainder -= self.modulus * (remainder >= self.modulus)
+    # if there are still elements in the remainder array that are greater than modulus, reduce them
+    while np.any(remainder >= self.modulus):
+      remainder[remainder >= self.modulus] -= self.modulus
     return remainder
   
 
@@ -59,6 +57,23 @@ class MontgomeryReduction(ModularReduction):
             LSB = acc & 1
             acc = np.where(LSB == 0, acc >> 1, (acc + self.modulus) >> 1)
         return acc
+    
+
+class ShiftAddReduction(ModularReduction):
+    def __init__(self, modulus):
+        super().__init__(modulus)
+    
+    # def reduce(self, A, B):
+    #     result = np.zeros(len(A) + len(B), dtype=A.dtype)
+    #     # Perform shift-and-add
+    #     for i, coeff in enumerate(B):
+    #       shifted_X = np.roll(A, i)  # Shift X by i positions
+    #       shifted_X[:i] = 0  # Zero out the rolled-over elements
+    #       result += coeff * shifted_X  # Add to the result
+
+    #     return result
+
+    # def reduce
   
 
 class SchoolbookReduction(ModularReduction):

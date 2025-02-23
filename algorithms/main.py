@@ -45,9 +45,8 @@ if __name__ == "__main__":
     B = reduction_instance.to_montgomery(B)
 
   start_time = time.perf_counter()
-  # for i in range(n):
-  #   product = A[i] * B
-  C = reduction_instance.reduce(A * B) 
+  # use np.convolve(A, B) instead of A * B which is element-wise multiplication
+  C = reduction_instance.reduce(np.convolve(A, B)) 
 
   end_time = time.perf_counter()
   print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
