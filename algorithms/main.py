@@ -1,7 +1,8 @@
 import numpy as np
+import random
 import time
 import sys
-from reductions.barrett_np import BarrettReduction
+from reductions.modred import ALGORITHMS
 
 # By using numpy, we can do everything with vectorized operations
 # This approach doesn't yet use NTT, as its sole purpose is to help
@@ -12,21 +13,25 @@ from reductions.barrett_np import BarrettReduction
 np.random.seed(7)
 
 if __name__ == "__main__":
-  if len(sys.argv) < 1:
+  if len(sys.argv) < 2:
     print("Please state the reduction algorithm to be tested!")
     print("Usage: python main.py <red_alg>")
     sys.exit(1)
 
+  # Get the algorithm name requested by the user:
+  algorithm_name = sys.argv[1].lower()
+
   # Get the polynomials from a uniform distribution:
   degree = np.random.randint(2**8, 2**10)
-  # print(f"degree: {degree}")
-  modulus = 17
+  
+  modulus = 7069
+  # modulus = 19
+  # Get the reduction instance:
+  reduction_instance = ALGORITHMS[algorithm_name](modulus)
 
-  # This needs to be changed to an if-else or smth depending on the requested algorithm
-  # Or use polymorphism?
-  red = BarrettReduction(modulus)
-  print("Doing modular reduction with plain Barrett reduction:")
+  print(f"Doing modular reduction with: {algorithm_name} and modulus: {modulus}")
 
+  # Polynomial coefficients between 0 and the modulus
   A = np.random.randint(0, modulus, size=degree, dtype=np.int64)
   B = np.random.randint(0, modulus, size=degree, dtype=np.int64)
 
@@ -35,18 +40,18 @@ if __name__ == "__main__":
 
   C = np.zeros(n + m - 1, dtype=np.int64)
 
+  if algorithm_name == "montgomery":
+    A = reduction_instance.to_montgomery(A)
+    B = reduction_instance.to_montgomery(B)
+
   start_time = time.perf_counter()
-  for i in range(n):
-    product = A[i] * B
-    reduced_product = red.reduce(product) 
-    # The resulting array has indeed elements lower than the modulus
-    # But the sum still increases, so we need to reduce it once more
-    # to keep it within the bounds of the ring
-    # (simply comment out line 44 to see what the results look like wihtout it)
-    C_slice = C[i:i+m] + reduced_product
-    C[i:i+m] = red.reduce(C_slice)
+  # for i in range(n):
+  #   product = A[i] * B
+  C = reduction_instance.reduce(A * B) 
 
   end_time = time.perf_counter()
-  print(f"Elapsed time: {(end_time - start_time)} (ms)")
+  print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
+  if algorithm_name == "montgomery":
+    C = reduction_instance.from_montgomery(C)
   print(f"New polynomial degree: {C.shape[0]}")
-  # print(C.tolist() )
+  print(C)
