@@ -25,7 +25,7 @@ if __name__ == "__main__":
   degree = np.random.randint(2**8, 2**10)
   
   modulus = 7069
-  # modulus = 19
+  modulus = 8191
   # Get the reduction instance:
   reduction_instance = ALGORITHMS[algorithm_name](modulus)
 
@@ -34,6 +34,9 @@ if __name__ == "__main__":
   # Polynomial coefficients between 0 and the modulus
   A = np.random.randint(0, modulus, size=degree, dtype=np.int64)
   B = np.random.randint(0, modulus, size=degree, dtype=np.int64)
+
+  # A = np.array([1, 2, 3])
+  # B = np.array([4, 5, 6])
 
   n = len(A)
   m = len(B)
@@ -45,6 +48,7 @@ if __name__ == "__main__":
     B = reduction_instance.to_montgomery(B)
 
   start_time = time.perf_counter()
+  # the polynomial reduction by x^n + 1 is missing as well for now.
   # use np.convolve(A, B) instead of A * B which is element-wise multiplication
   C = reduction_instance.reduce(np.convolve(A, B)) 
 
