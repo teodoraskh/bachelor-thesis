@@ -25,7 +25,7 @@ if __name__ == "__main__":
   degree = np.random.randint(2**8, 2**10)
   
   modulus = 7069
-  modulus = 8191
+  # modulus = 6
   # Get the reduction instance:
   reduction_instance = ALGORITHMS[algorithm_name](modulus)
 

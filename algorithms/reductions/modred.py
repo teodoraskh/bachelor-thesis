@@ -33,6 +33,7 @@ class BarrettReduction(ModularReduction):
     remainder -= self.modulus * (remainder >= self.modulus)
     # if there are still elements in the remainder array that are greater than modulus, reduce them
     while np.any(remainder >= self.modulus):
+      # print("p")
       remainder[remainder >= self.modulus] -= self.modulus
     return remainder
   
@@ -67,10 +68,14 @@ class ShiftAddReduction(ModularReduction):
     # the remainder is computed by summing up the k-bit chunks
     def __init__(self, modulus):
         super().__init__(modulus)
-        self.k    = math.log2(self.modulus + 1)
-        assert self.k == math.floor(self.k), "The modulus is not a Mersenne prime!"
-        self.k = int(self.k) # for bitwise operations
-        self.mask = (1 << self.k) - 1 # the mask is the modulus but in Mersenne form
+        # self.k    = math.log2(self.modulus + 1)
+        # if self.k == math.floor(self.k): 
+        #    print("The modulus is a Mersenne prime!")
+        #    self.k = int(self.k) # for bitwise operations
+        # else:
+        self.k = self.modulus.bit_length()
+        self.mask = (1 << self.k) - 1
+        self.coeff = (1 << self.k) % self.modulus
 
     # Find k, and also check if  modulus is a mersenne prime:
     # if m = 7 => 7 = 2^k -1 => 8 = 2^k => k = log_2(8) => k = 3.
@@ -78,10 +83,17 @@ class ShiftAddReduction(ModularReduction):
     
     def reduce(self, mult):
       remainder = mult.copy()
+      print("coeff", self.coeff)
+      # while np.any(mult >= self.modulus):
+      for _ in range(self.modulus.bit_length()):
+        # mask gets least k bits, r >> k removes those k bits
+        # print(remainder)
+        # by default, mersenne use coeff = 1 because 2^k congr 1 mod modulus
+        # so if we find a way to easily precompute coeff...
+        remainder = self.coeff * (remainder >> self.k) + (remainder & self.mask)
       while np.any(remainder >= self.modulus):
-        remainder = (remainder >> self.k) + (remainder & self.mask)
+         remainder[remainder>= self.modulus] -= self.modulus
       return remainder
-  
 
 class SchoolbookReduction(ModularReduction):
     def __init__(self, modulus):
