@@ -26,13 +26,13 @@ class BarrettReduction(ModularReduction):
     self.mu = (1 << (2 * self.k)) // self.modulus
 
   def reduce(self, mult):
-    approximated_quotient = (mult * self.mu) >> (2 * self.k)
-    remainder = mult - approximated_quotient * self.modulus
+    approximated_quotient = np.multiply(mult, self.mu, dtype=np.uint64) >> np.multiply(2, self.k, dtype=np.uint64)
+    remainder = mult - np.multiply(approximated_quotient,self.modulus, dtype=np.uint64)
     # This will do a bitmask over the entire np.array() and will thus avoid any
     # looping or branching
-    remainder -= self.modulus * (remainder >= self.modulus)
+    remainder -= np.multiply(self.modulus, (remainder >= self.modulus), dtype=np.uint64)
     # if there are still elements in the remainder array that are greater than modulus, reduce them
-    while np.any(remainder >= self.modulus):
+    if np.any(remainder >= self.modulus):
       # print("p")
       remainder[remainder >= self.modulus] -= self.modulus
     return remainder
@@ -43,7 +43,7 @@ class MontgomeryReduction(ModularReduction):
       super().__init__(modulus)
       self.radix = 1 << self.modulus.bit_length() #R = (2 ^ n)
       self.inv_radix = pow(self.radix, -1, self.modulus)
-      assert(np.gcd(self.radix, self.modulus) == 1)
+      assert(np.gcd(self.radix, self.modulus, dtype=np.uint64) == 1)
 
     def to_montgomery(self, x):
       return (x * self.radix) % self.modulus
@@ -91,7 +91,7 @@ class ShiftAddReduction(ModularReduction):
         # by default, mersenne use coeff = 1 because 2^k congr 1 mod modulus
         # so if we find a way to easily precompute coeff...
         remainder = self.coeff * (remainder >> self.k) + (remainder & self.mask)
-      while np.any(remainder >= self.modulus):
+      if np.any(remainder >= self.modulus):
          remainder[remainder>= self.modulus] -= self.modulus
       return remainder
 

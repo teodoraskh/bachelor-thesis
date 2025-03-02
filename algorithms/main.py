@@ -24,16 +24,17 @@ if __name__ == "__main__":
   # Get the polynomials from a uniform distribution:
   degree = np.random.randint(2**8, 2**10)
   
-  modulus = 7069
+  # modulus = 7069
   # modulus = 6
+  modulus = (1 << 32) - 1
   # Get the reduction instance:
   reduction_instance = ALGORITHMS[algorithm_name](modulus)
 
   print(f"Doing modular reduction with: {algorithm_name} and modulus: {modulus}")
 
   # Polynomial coefficients between 0 and the modulus
-  A = np.random.randint(0, modulus, size=degree, dtype=np.int64)
-  B = np.random.randint(0, modulus, size=degree, dtype=np.int64)
+  A = np.random.randint(0, modulus, size=degree, dtype=np.uint64)
+  B = np.random.randint(0, modulus, size=degree, dtype=np.uint64)
 
   # A = np.array([1, 2, 3])
   # B = np.array([4, 5, 6])
@@ -41,7 +42,7 @@ if __name__ == "__main__":
   n = len(A)
   m = len(B)
 
-  C = np.zeros(n + m - 1, dtype=np.int64)
+  C = np.zeros(n + m - 1, dtype=np.uint64)
 
   if algorithm_name == "montgomery":
     A = reduction_instance.to_montgomery(A)
