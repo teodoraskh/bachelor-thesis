@@ -25,8 +25,8 @@ if __name__ == "__main__":
   degree = np.random.randint(2**8, 2**10)
   
   # modulus = 7069
-  # modulus = 6
-  modulus = (1 << 32) - 1
+  # modulus = 17
+  modulus = (1 << 63) - 1
   # Get the reduction instance:
   reduction_instance = ALGORITHMS[algorithm_name](modulus)
 
@@ -42,20 +42,26 @@ if __name__ == "__main__":
   n = len(A)
   m = len(B)
 
-  C = np.zeros(n + m - 1, dtype=np.uint64)
-
-  if algorithm_name == "montgomery":
-    A = reduction_instance.to_montgomery(A)
-    B = reduction_instance.to_montgomery(B)
+  C = np.zeros(n + m - 1, dtype=np.object_)
+  conv = np.zeros(n + m - 1, dtype=np.object_)
 
   start_time = time.perf_counter()
+
+  # for algorithm in ALGORITHMS:
+  if algorithm_name == "montgomery":
+    conv = reduction_instance.to_montgomery(np.convolve(A, B))
+  else:
+    conv = np.convolve(A, B)
+
   # the polynomial reduction by x^n + 1 is missing as well for now.
   # use np.convolve(A, B) instead of A * B which is element-wise multiplication
-  C = reduction_instance.reduce(np.convolve(A, B)) 
+  C = reduction_instance.reduce(conv) 
 
   end_time = time.perf_counter()
   print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
   if algorithm_name == "montgomery":
     C = reduction_instance.from_montgomery(C)
   print(f"New polynomial degree: {C.shape[0]}")
+  print(C.dtype)
   print(C)
+  # print(hash(C.tobytes()))
