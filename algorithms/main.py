@@ -34,7 +34,10 @@ if __name__ == "__main__":
   
   # modulus = 7069
   # modulus = 17
-  modulus = np.random.randint(2, (1 << 63) - 1)
+
+  # force nodulus to be odd?
+  # similar approach here: https://www.nayuki.io/res/montgomery-reduction-algorithm/montgomery-reducer.py
+  modulus = np.random.randint(2, (1 << 63) - 1) | 1  
 
   # Polynomial coefficients between 0 and the modulus
   A = np.random.randint(0, modulus, size=degree, dtype=np.uint64)
