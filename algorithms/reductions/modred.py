@@ -48,9 +48,9 @@ class MontgomeryReduction(ModularReduction):
     def __init__(self, modulus):
       super().__init__(modulus)
       self.radix = np.object_(1 << self.modulus.bit_length()) #R = (2 ^ n)
+      assert np.gcd(self.radix, self.modulus, dtype=np.object_) == 1, "The modulus and the radix are not coprime!" # for the modular inverse to exist
       self.inv_radix = np.object_(pow(self.radix, -1, self.modulus))
       self.modulus = np.object_(self.modulus)
-      assert(np.gcd(self.radix, self.modulus, dtype=np.object_) == 1) # for the modular inverse to exist
 
     def to_montgomery(self, x):
       return np.object_((np.object_(x) * self.radix) % self.modulus)

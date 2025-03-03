@@ -10,7 +10,7 @@ from reductions.modred import ALGORITHMS
 # Afterwards, when I have gotten the results, the NTT step will also be implemented
 
 # Use a seed for reproducible results!!!
-np.random.seed(7)
+# np.random.seed(7)
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
