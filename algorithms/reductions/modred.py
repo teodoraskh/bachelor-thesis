@@ -18,6 +18,12 @@ class ModularReduction:
   def __repr__(self):
         return f"{self.__class__.__name__}(modulus={self.modulus})"
 
+class SchoolbookReduction(ModularReduction):
+    def __init__(self, modulus):
+      super().__init__(modulus)
+
+    def reduce(self, mult):
+        return mult % self.modulus
 
 class BarrettReduction(ModularReduction):
   def __init__(self, modulus):
@@ -95,11 +101,5 @@ class ShiftAddReduction(ModularReduction):
          remainder[remainder>= self.modulus] -= self.modulus
       return remainder
 
-class SchoolbookReduction(ModularReduction):
-    def __init__(self, modulus):
-      super().__init__(modulus)
-
-    def reduce(self, mult):
-        return mult % self.modulus
   
 ALGORITHMS = ModularReduction.available_algorithms()
