@@ -10,7 +10,7 @@ from reductions.modred import ALGORITHMS
 # Afterwards, when I have gotten the results, the NTT step will also be implemented
 
 # Use a seed for reproducible results!!!
-# np.random.seed(7)
+np.random.seed(7)
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
@@ -37,7 +37,11 @@ if __name__ == "__main__":
 
   # force nodulus to be odd?
   # similar approach here: https://www.nayuki.io/res/montgomery-reduction-algorithm/montgomery-reducer.py
-  modulus = np.random.randint(2, (1 << 63) - 1) | 1  
+  # modulus = np.random.randint(2, (1 << 63) - 1) | 1  
+  # these VVV aren't
+  # modulus = np.random.randint(2, (1 << 63) - 1)
+  # this is montgomery friendly
+  modulus = (1 << 62) - 1
 
   # Polynomial coefficients between 0 and the modulus
   A = np.random.randint(0, modulus, size=degree, dtype=np.uint64)
@@ -59,17 +63,22 @@ if __name__ == "__main__":
     print(f"Modulus:   {modulus}")
     start_time = time.perf_counter()
     if algorithm == "montgomery":
+      # A_m = reduction_instance.to_montgomery(A)
+      # B_m = reduction_instance.to_montgomery(B)
       conv = reduction_instance.to_montgomery(np.convolve(A, B))
+      # conv = np.convolve(A_m, B_m)
     else:
       conv = np.convolve(A, B)
 
     # the polynomial reduction by x^n + 1 is missing as well for now.
     # use np.convolve(A, B) instead of A * B which is element-wise multiplication
     C = reduction_instance.reduce(conv) 
-    results.append(C)
     if algorithm == "montgomery":
       C = reduction_instance.from_montgomery(C)
 
+
+    print(C)
+    results.append(C)
 
     end_time = time.perf_counter()
     print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
