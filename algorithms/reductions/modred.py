@@ -38,9 +38,10 @@ class BarrettReduction(ModularReduction):
     # looping or branching
     remainder -= np.multiply(self.modulus, (remainder >= self.modulus), dtype=np.object_)
     # if there are still elements in the remainder array that are greater than modulus, reduce them
-    # while np.any(remainder >= self.modulus):
-    remainder[remainder >= self.modulus] -= self.modulus
-    remainder[remainder >= self.modulus] -= self.modulus
+    while np.any(remainder >= self.modulus):
+      print("in while")
+      remainder[remainder >= self.modulus] -= self.modulus
+    # remainder[remainder >= self.modulus] -= self.modulus
     return remainder
   
 
@@ -97,7 +98,8 @@ class ShiftAddReduction(ModularReduction):
         hi = np.object_(remainder >> self.k)
         lo = np.object_(remainder & self.mask)
         remainder = np.object_(self.coeff * hi  + lo)
-      if np.any(remainder >= self.modulus):
+      while np.any(remainder >= self.modulus):
+         print("t")
          remainder[remainder>= self.modulus] -= self.modulus
       return remainder
 

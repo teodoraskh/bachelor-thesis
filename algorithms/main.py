@@ -39,7 +39,7 @@ if __name__ == "__main__":
   # similar approach here: https://www.nayuki.io/res/montgomery-reduction-algorithm/montgomery-reducer.py
   # modulus = np.random.randint(2, (1 << 63) - 1) | 1  
   # these VVV aren't
-  # modulus = np.random.randint(2, (1 << 63) - 1)
+  # modulus = np.random.randint(2, (1 << 32) - 1) | 1
   # this is montgomery friendly
   modulus = (1 << 62) - 1
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
   conv = np.zeros(n + m - 1, dtype=np.object_)
 
-  results = []
+  results = {}
 
   # Get the reduction instance:
   for algorithm in algorithms_to_test:
@@ -73,18 +73,21 @@ if __name__ == "__main__":
     # the polynomial reduction by x^n + 1 is missing as well for now.
     # use np.convolve(A, B) instead of A * B which is element-wise multiplication
     C = reduction_instance.reduce(conv) 
-    if algorithm == "montgomery":
-      C = reduction_instance.from_montgomery(C)
+    # if algorithm == "montgomery":
+    #   C = reduction_instance.from_montgomery(C)
 
-
-    print(C)
-    results.append(C)
+    results[algorithm] = C
 
     end_time = time.perf_counter()
     print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
     print(f"New polynomial degree: {C.shape[0]}")
-    print(C[25])
+    print(C)
+    # print(C[60])
 
-  assert all(np.array_equal(result, results[0]) for result in results), "Not all results are the same!"
+  reference_key, reference_value = next(iter(results.items()))
+  mismatched_keys = [key for key, value in results.items() if not np.array_equal(value, reference_value)]
+  if mismatched_keys:
+      print(f"Mismatched keys: {mismatched_keys}")
+      assert False, f"Not all results are the same! Mismatched keys: {mismatched_keys}"
 
   print("Reduction successfully done!")
