@@ -32,16 +32,16 @@ if __name__ == "__main__":
   # Get the polynomials from a uniform distribution:
   degree = np.random.randint(2**8, 2**10)
   
-  # modulus = 7069
+  modulus = 7069
   # modulus = 17
 
   # force nodulus to be odd?
   # similar approach here: https://www.nayuki.io/res/montgomery-reduction-algorithm/montgomery-reducer.py
   # modulus = np.random.randint(2, (1 << 63) - 1) | 1  
   # these VVV aren't
-  # modulus = np.random.randint(2, (1 << 32) - 1) | 1
+  modulus = np.random.randint(2, (1 << 32) - 1) | 1
   # this is montgomery friendly
-  modulus = (1 << 62) - 1
+  # modulus = (1 << 62) - 1
 
   # Polynomial coefficients between 0 and the modulus
   A = np.random.randint(0, modulus, size=degree, dtype=np.uint64)
@@ -65,10 +65,26 @@ if __name__ == "__main__":
     if algorithm == "montgomery":
       # A_m = reduction_instance.to_montgomery(A)
       # B_m = reduction_instance.to_montgomery(B)
-      conv = reduction_instance.to_montgomery(np.convolve(A, B))
+
+      # this VVVV will of course not work because convolution will make the
+      # coefficients larger than modulus^2 - and this input should be avoided 
+      # for barrett reduction, where 0 <= input < modulus^2
+      # conv = reduction_instance.to_montgomery(np.convolve(A, B))
+
+      # if we were to use NTT, then this convolution would become element-wise
+      # multiplication, which ensures the fact that:
+      # 1. the polynomial degrees do not exceed *n*
+      # 2. polymul in NTT form is now element-wise multiplication instead of convolution,
+      #    which ensures the fact that the result of the multiplied coefficients will not
+      #    exceed modulus^2.
+      # therefore, for the sake of simplicity, we'll just use element-wise multiplication,
+      # which will now fit the algorithms
+      conv = reduction_instance.to_montgomery(A * B)
       # conv = np.convolve(A_m, B_m)
     else:
-      conv = np.convolve(A, B)
+      conv = A * B
+
+    print("conv:", conv)
 
     # the polynomial reduction by x^n + 1 is missing as well for now.
     # use np.convolve(A, B) instead of A * B which is element-wise multiplication
