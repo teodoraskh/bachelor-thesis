@@ -32,6 +32,7 @@ class BarrettReduction(ModularReduction):
     self.mu = np.object_((1 << 2 * self.k) // self.modulus)
 
   def reduce(self, mult):
+    assert np.all(mult <= self.modulus**2)
     approximated_quotient = np.multiply(mult, self.mu, dtype=np.object_) >> np.multiply(2, self.k, dtype=np.object_)
     remainder = mult - np.multiply(approximated_quotient,self.modulus, dtype=np.object_)
     # This will do a bitmask over the entire np.array() and will thus avoid any
