@@ -8,13 +8,14 @@ module barrett_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
+    logic                       ready_o;         // First multiplication is valid
     logic [63:0]     indata_x_i;      // Input data -> operand a.
     logic [63:0]     indata_m_i;      // Input data -> operand b.
     logic [63:0]     indata_mu_i;      // Input data -> operand b.
     logic [63:0]   outdata_r_o;     // Output data -> result a*b.
 
     localparam NUM_DATA = 3;
-    logic [127:0]   reference_o [NUM_DATA-1:0];
+    logic signed [127:0]   reference_o [NUM_DATA-1:0];
 
     // Instantiate module
     barrett_pipelined uut (
@@ -70,35 +71,19 @@ module barrett_tb;
         // localparam K = 32;  // Actual modulus bit-width
           indata_m_i = 64'h0000_0000_9215_3525;;  // Ensure m >= 2
           // indata_mu_i = 64'h70CA_D1B5_D8A8_8724;  // Correct μ
-          indata_mu_i = 64'h1C1A8F3C5;
+          indata_mu_i = 64'h2CDE_B2B0;
           // indata_mu_i = (2 ** 64) / indata_m_i;
         for (integer i=0; i<NUM_DATA; i++) begin
-          #10;
-          $display("[%04t] > Set start signal", $time);
-          indata_x_i = $urandom() % (indata_m_i * 4);  // x < 4m (Barrett requirement)
-          reference_o[i] = indata_x_i % indata_m_i;
-          start_i = 1;
-          $display("[%04t] > Set A  : %h", $time, indata_x_i);
-          $display("[%04t] > Set B  : %h", $time, indata_m_i);
-          $display("[%04t] > Set REF: %h", $time, reference_o[i]);
+            #10;
+            $display("[%04t] > Set start signal", $time);
+            indata_x_i = $urandom() % (indata_m_i * 4);  // x < 4m (Barrett requirement)
+            reference_o[i] = indata_x_i % indata_m_i;
+            start_i = 1;
+            $display("[%04t] > Set A  : %h", $time, indata_x_i);
+            $display("[%04t] > Set B  : %h", $time, indata_m_i);
+            $display("[%04t] > Set REF: %h", $time, reference_o[i]);
 
-          // @(posedge finish_o);  // Wait for completion
-          //   start_i = 0;
         end
-        // for (integer i=0; i<NUM_DATA; i++) begin
-        //     #10;
-        //     // $display("[%04t] > Set start signal", $time);
-        //     indata_x_i = $random; // 64'h0003_0002_0001_0000;
-        //     indata_m_i = $random; // 64'h0000_0000_0000_0002;
-        //     indata_mu_i = (1 / indata_m_i) << 2 * $bits(indata_m_i);
-        //     reference_o[i] = indata_x_i % indata_m_i;
-        //     start_i = 1;
-
-        //     // $display("[%04t] > Set A  : %h", $time, indata_x_i);
-        //     // $display("[%04t] > Set B  : %h", $time, indata_m_i);
-        //     // $display("[%04t] > Set REF: %h", $time, reference_o[i]);
-
-        // end
 
         #10;
         $display("[%04t] > Reset start signal", $time);
