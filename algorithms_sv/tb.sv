@@ -14,7 +14,7 @@ module barrett_tb;
     logic [63:0]     indata_mu_i;      // Input data -> operand b.
     logic [63:0]   outdata_r_o;     // Output data -> result a*b.
 
-    localparam NUM_DATA = 3;
+    localparam NUM_DATA = 12;
     logic signed [127:0]   reference_o [NUM_DATA-1:0];
 
     // Instantiate module
