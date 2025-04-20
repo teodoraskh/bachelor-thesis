@@ -1,7 +1,7 @@
 
 // import multiplier_pkg::*;
 
-module barrett_np_tb;
+module montgomery_tb;
 
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
@@ -10,19 +10,17 @@ module barrett_np_tb;
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i;      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_mu_i;      // Input data -> operand b.
-    logic [64*2-1:0]            outdata_r_o;     // Output data -> result a*b.
+    logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
 
-    logic [64*2-1:0]            reference_o;
+    logic [64-1:0]              reference_o;
 
     // Instantiate module
-    barrett_np uut (
+    montgomery_serialized uut (
         .clk_i                  (clk_i),
         .rst_ni                 (rst_ni),
         .start_i                (start_i),    
         .x_i                    (indata_x_i),
         .m_i                    (indata_m_i),
-        .mu_i                   (indata_mu_i),
         .result_o               (outdata_r_o),
         .valid_o                (finish_o)    
     );
@@ -32,26 +30,33 @@ module barrett_np_tb;
 
     // Dumpfile 
     initial begin
-        $dumpfile("barrett_np.vcd");
-        $dumpvars(0, barrett_np_tb);
+        $dumpfile("montgomery_tb.vcd");
+        $dumpvars(0, montgomery_tb);
     end
 
     // Stimulus generation
     initial begin
         $display("\n=======================================");
-        $display("[%04t] > Start barrett_np test", $time);
+        $display("[%04t] > Start montgomery test", $time);
         $display("=======================================\n");
 
         // Initialize inputs
         clk_i = 0;
         rst_ni = 0;
         start_i = 0;
-        indata_m_i = 64'h0000_0000_9215_3525;
-        indata_mu_i = 64'h2CDE_B2B0;
+        indata_m_i = 64'h3A32E4C4C7A8C21B;
+        // indata_mu_i = 64'h2CDE_B2B0;
 
+        // inp_file  = $fopen("input.txt", "r");
+        // outp_file = $fopen("output.txt", "w");
 
-        repeat (3) begin
+        repeat (1) begin
             rst_ni = 0;
+            // 10C26604
+            // (($urandom() % (indata_m_i * 4))
+            // indata_x_i = (64'h10C26604 * $bits(indata_m_i)) % indata_m_i;
+            // already in Montgomery form for now VVVV
+            indata_x_i = 64'hA0AC29C83A77226;
             #20;
             // $display("[%04t] > Set reset signal", $time);
             rst_ni = 1;
@@ -59,8 +64,7 @@ module barrett_np_tb;
             #10;
 
             // $display("[%04t] > Set start signal", $time);
-            indata_x_i = $urandom() % (indata_m_i * 4);
-            reference_o = indata_x_i % indata_m_i;
+            reference_o = 64'hFA02FB51BF52F459 % indata_m_i;
             start_i = 1;
 
             $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
@@ -76,7 +80,7 @@ module barrett_np_tb;
             // $display("[%04t] > Received finish signal", $time);
             $display("");
 
-            $display("[%04t] > Received data: %h", $time, outdata_r_o);
+            $display("[%04t] > Received data : %h", $time, outdata_r_o);
             $display("[%04t] > Reference data: %h", $time, reference_o);
             if (outdata_r_o == reference_o)
                 $display("[%04t] > Data is VALID", $time);
@@ -85,7 +89,7 @@ module barrett_np_tb;
         end
 
         $display("\n=======================================");
-        $display("[%04t] > Finish barrett_np test", $time);
+        $display("[%04t] > Finish montgomery test", $time);
         $display("=======================================\n");
 
         // Finish simulation
@@ -93,4 +97,4 @@ module barrett_np_tb;
         $finish;
     end
 
-endmodule : barrett_np_tb 
+endmodule : montgomery_tb 
