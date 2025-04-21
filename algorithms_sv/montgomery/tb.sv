@@ -34,6 +34,9 @@ module montgomery_tb;
         $dumpvars(0, montgomery_tb);
     end
 
+    integer inp_file;
+    logic [63:0] indata_x;
+
     // Stimulus generation
     initial begin
         $display("\n=======================================");
@@ -45,26 +48,31 @@ module montgomery_tb;
         rst_ni = 0;
         start_i = 0;
         indata_m_i = 64'h3A32E4C4C7A8C21B;
+        indata_x_i = 64'h1;
+        indata_x = 64'h1;
         // indata_mu_i = 64'h2CDE_B2B0;
 
-        // inp_file  = $fopen("input.txt", "r");
+        inp_file  = $fopen("input.txt", "r");
         // outp_file = $fopen("output.txt", "w");
 
-        repeat (1) begin
-            rst_ni = 0;
-            // 10C26604
-            // (($urandom() % (indata_m_i * 4))
-            // indata_x_i = (64'h10C26604 * $bits(indata_m_i)) % indata_m_i;
-            // already in Montgomery form for now VVVV
-            indata_x_i = 64'hA0AC29C83A77226;
-            #20;
-            // $display("[%04t] > Set reset signal", $time);
-            rst_ni = 1;
-            // Wait a few cycles
-            #10;
+        while (indata_x != 0) begin
+          rst_ni = 0;
+          // 10C26604
+          // (($urandom() % (indata_m_i * 4))
+          // indata_x_i = (64'h10C26604 * $bits(indata_m_i)) % indata_m_i;
+          // already in Montgomery form for now VVVV
+          // indata_x_i = 64'hA0AC29C83A77226;
+          $fscanf(inp_file, "%h %h", indata_x, indata_x_i);
+          #20;
+          // $display("[%04t] > Set reset signal", $time);
+          rst_ni = 1;
+          // Wait a few cycles
+          #10;
 
+          if(indata_x != 0) begin
             // $display("[%04t] > Set start signal", $time);
-            reference_o = 64'hFA02FB51BF52F459 % indata_m_i;
+            // 64'hFA02FB51BF52F459
+            reference_o = indata_x % indata_m_i;
             start_i = 1;
 
             $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
@@ -86,6 +94,7 @@ module montgomery_tb;
                 $display("[%04t] > Data is VALID", $time);
             else
                 $display("[%04t] > Data is INVALID", $time);
+          end
         end
 
         $display("\n=======================================");
