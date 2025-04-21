@@ -28,7 +28,7 @@ always_ff @(posedge clk_i) begin
     end
 end
 
-logic lsb = accumulator_p[0];
+// logic lsb = accumulator_p[0];
 
 always_comb begin
   next_state    = curr_state; // default is to stay in current state
@@ -46,7 +46,7 @@ always_comb begin
         if(idx_p == $clog2(m_i + 1)) begin
           next_state = FINISH;
         end else begin
-          if(lsb == 1) begin
+          if(accumulator_p[0] == 1) begin
             accumulator_n = (accumulator_p + m_i) >> 1;
           end else begin
             accumulator_n = accumulator_p >> 1;
@@ -67,9 +67,9 @@ end
 assign valid_o = (curr_state == FINISH);
 assign result_o = (curr_state == FINISH) ? accumulator_p : 64'b0;
 
-always_ff @(posedge clk_i) begin
-    $display("Cycle: %d, State: %s, x_i: %h, m_i: %h, idx_p: %d, acc_p: %h, rst_ni: %b, bits_mi: %d",
-            $time, curr_state.name(), x_i, m_i, idx_p, accumulator_p, rst_ni, $clog2(m_i + 1));
-end
+// always_ff @(posedge clk_i) begin
+//     $display("Cycle: %d, State: %s, x_i: %h, m_i: %h, idx_p: %d, acc_p: %h, rst_ni: %b, bits_mi: %d",
+//             $time, curr_state.name(), x_i, m_i, idx_p, accumulator_p, rst_ni, $clog2(m_i + 1));
+// end
 
 endmodule:montgomery_serialized

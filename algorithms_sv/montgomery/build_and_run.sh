@@ -25,8 +25,8 @@ iverilog -g2012 -I. -o montgomery.vvp \
 vvp montgomery.vvp || { echo "Simulation failed"; exit 1; }
 
 # 4. Open waveforms (only if simulation succeeded)
-if [ -f montgomery.vcd ]; then
-  gtkwave montgomery.vcd &
+if [ -f montgomery_tb.vcd ]; then
+  gtkwave montgomery_tb.vcd &
 else
   echo "No waveform file generated"
   exit 1
