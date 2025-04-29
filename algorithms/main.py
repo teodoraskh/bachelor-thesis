@@ -10,7 +10,7 @@ from reductions.modred import ALGORITHMS
 # Afterwards, when I have gotten the results, the NTT step will also be implemented
 
 # Use a seed for reproducible results!!!
-# np.random.seed(7)
+np.random.seed(7)
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
@@ -33,15 +33,17 @@ if __name__ == "__main__":
     # Get the polynomials from a uniform distribution:
     degree = np.random.randint(2**8, 2**10)
     
-    modulus = 7069
+    # modulus = 2450863333
+
+    # modulus = 7069
     # modulus = 17
 
     # force nodulus to be odd?
     # similar approach here: https://www.nayuki.io/res/montgomery-reduction-algorithm/montgomery-reducer.py
-    # modulus = np.random.randint(2, (1 << 63) - 1) | 1  
+    modulus = np.random.randint(2, (1 << 63) - 1) | 1  
     # these VVV aren't
     # modulus = np.random.randint(2, (1 << 32) - 1) | 1
-    modulus = 7
+    # modulus = 7
     # this is montgomery friendly
     # modulus = (1 << 62) - 1
 
@@ -67,6 +69,8 @@ if __name__ == "__main__":
       if algorithm == "montgomery":
         # A_m = reduction_instance.to_montgomery(A)
         # B_m = reduction_instance.to_montgomery(B)
+        # print(A_m)
+        # print(B_m)
 
         # this VVVV will of course not work because convolution will make the
         # coefficients larger than modulus^2 - and this input should be avoided 
@@ -81,25 +85,32 @@ if __name__ == "__main__":
         #    exceed modulus^2.
         # therefore, for the sake of simplicity, we'll just use element-wise multiplication,
         # which will now fit the algorithms
-        conv = reduction_instance.to_montgomery(A * B)
+        # conv = reduction_instance.to_montgomery(A) * reduction_instance.to_montgomery(B)
+        print("not mont: ", np.vectorize(hex)(A*B))
+        conv = reduction_instance.to_montgomery(A*B)
         # conv = np.convolve(A_m, B_m)
       else:
         conv = A * B
 
-      print("conv:", conv)
+        # print(A)
+        # print(B)
+
+      print("conv:", np.vectorize(hex)(conv))
+      # print("conv:", conv)
 
       # the polynomial reduction by x^n + 1 is missing as well for now.
       # use np.convolve(A, B) instead of A * B which is element-wise multiplication
       C = reduction_instance.reduce(conv) 
       # if algorithm == "montgomery":
-      #   C = reduction_instance.from_montgomery(C)
+      #   C = reduction_instance.reduce(C)
 
       results[algorithm] = C
 
       end_time = time.perf_counter()
       print(f"Elapsed time: {(end_time - start_time) * 1000} (ms)")
       print(f"New polynomial degree: {C.shape[0]}")
-      print(C)
+      print(np.vectorize(hex)(C))
+      # print(C)
       # print(C[60])
 
     reference_key, reference_value = next(iter(results.items()))

@@ -48,27 +48,55 @@ class BarrettReduction(ModularReduction):
 class MontgomeryReduction(ModularReduction):
     def __init__(self, modulus):
       super().__init__(modulus)
-      self.radix = np.object_(1 << self.modulus.bit_length()) #R = (2 ^ n)
+      self.modulus = np.object_(self.modulus)
+      self.radix = np.object_(1 << int(self.modulus).bit_length()) #R = (2 ^ n)
       assert np.gcd(self.radix, self.modulus, dtype=np.object_) == 1, "The modulus and the radix are not coprime!" # for the modular inverse to exist
       self.inv_radix = np.object_(pow(self.radix, -1, self.modulus))
-      self.modulus = np.object_(self.modulus)
+      self.n_prime = np.object_(-pow(self.modulus, -1, self.radix))
 
     def to_montgomery(self, x):
-      return np.object_((np.object_(x) * self.radix) % self.modulus)
+      # return np.object_(self.reduce(np.object_(x) * self.radix * self.radix, True))
+      return np.object_(np.object_(x) * self.radix % self.modulus)
 
     def from_montgomery(self, x):
       return np.object_((np.object_(x) * self.inv_radix) % self.modulus)
+    
+    def find_modular_inverse(self, x):
+      t, new_t = 0, 1
+      r, new_r = self.radix, self.modulus
 
-    def reduce(self, mult):
-        acc = np.object_(mult.copy())
-        # go through every bit of the modulus
-        for _ in range(self.modulus.bit_length()):
-            # get lsb of every coefficient found in acc, then do conditional reduction
-            LSB = np.object_(acc & 1)
-            acc = np.object_(np.where(LSB == 0, np.object_(acc >> 1), np.object_(np.object_(acc + self.modulus) >> 1)))
-            # print(acc)
-            # print()
-        return acc
+      while new_r != 0:
+        quotient = r // new_r
+        t, new_t = new_t, t - quotient * new_t
+        r, new_r = new_r, r - quotient * new_r
+
+      if r > 1:
+        raise ValueError(f"{self.modulus} has no modular inverse modulo {self.radix}")
+      if t < 0:
+        t += self.radix
+      return -t
+
+    def reduce(self, T):
+      # self.n_prime = self.find_modular_inverse(T)
+      print("correction: ", self.n_prime)
+      m = np.object_((T & (self.radix - 1)) * self.n_prime & (self.radix - 1))
+      t = np.object_((T + m * self.modulus) >> self.modulus.bit_length())
+      t = np.where(t >= self.modulus, t - self.modulus, t)
+      return t
+
+    # NOTE: this vvv also works fine
+    # def reduce(self, mult):
+    #   # assert np.all(mult <= self.modulus*2)
+    #   acc = np.object_(mult.copy())
+    #   # go through every bit of the modulus
+    #   for _ in range(self.modulus.bit_length()):
+    #     # get lsb of every coefficient found in acc, then do conditional reduction
+    #     LSB = np.object_(acc & 1)
+    #     acc = np.object_(np.where(LSB == 0, np.object_(acc >> 1), np.object_(np.object_(acc + self.modulus) >> 1)))
+    #   # acc = np.where(acc >= self.modulus, acc - self.modulus, acc)
+    #   return acc
+
+
     
 
 class ShiftAddReduction(ModularReduction):
@@ -88,6 +116,8 @@ class ShiftAddReduction(ModularReduction):
     # if k is an integer, then m is mersenne
     
     def reduce(self, mult):
+      print(f"bitlength: {self.k}")
+      print(f"correction: {self.coeff}")
       remainder = np.object_(mult.copy())
       # while np.any(mult >= self.modulus):
       for _ in range(self.modulus.bit_length()):
