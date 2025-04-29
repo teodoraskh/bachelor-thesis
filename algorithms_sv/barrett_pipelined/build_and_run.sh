@@ -17,20 +17,20 @@
 iverilog -E multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
 
 # 2. Compile all dependencies IN ORDER (packages first!)
-iverilog -g2012 -I. -o barrett.vvp \
+iverilog -g2012 -I. -o barrett_precomp_tb.vvp \
   multiplier_pkg.sv \
   multiplier_16x16.sv \
   multiplier_top.sv \
   shiftreg.sv \
   barrett.sv \
-  tb.sv || { echo "Compilation failed"; exit 1; }
+  tb_precomp.sv || { echo "Compilation failed"; exit 1; }
 
 # 3. Run simulation (only if compilation succeeded)
-vvp barrett.vvp || { echo "Simulation failed"; exit 1; }
+vvp barrett_precomp_tb.vvp || { echo "Simulation failed"; exit 1; }
 
 # 4. Open waveforms (only if simulation succeeded)
-if [ -f barrett.vcd ]; then
-  gtkwave barrett.vcd &
+if [ -f barrett_precomp_tb.vcd ]; then
+  gtkwave barrett_precomp_tb.vcd &
 else
   echo "No waveform file generated"
   exit 1

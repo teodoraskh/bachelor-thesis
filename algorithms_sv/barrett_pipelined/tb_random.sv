@@ -1,7 +1,7 @@
 
 // import multipler_pkg::*;
 
-module barrett_tb;
+module barrett_random_tb;
 
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
@@ -9,13 +9,13 @@ module barrett_tb;
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
     logic                       ready_o;         // First multiplication is valid
-    logic [63:0]     indata_x_i;      // Input data -> operand a.
-    logic [63:0]     indata_m_i;      // Input data -> operand b.
-    logic [63:0]     indata_mu_i;      // Input data -> operand b.
-    logic [63:0]     outdata_r_o;     // Output data -> result a*b.
+    logic [63:0]                indata_x_i;      // Input data -> operand a.
+    logic [63:0]                indata_m_i;      // Input data -> operand b.
+    logic [63:0]                indata_mu_i;     // Input data -> operand b.
+    logic [63:0]                outdata_r_o;     // Output data -> result a*b.
 
     localparam NUM_DATA = 16;
-    logic signed [127:0]   reference_o [NUM_DATA-1:0];
+    logic signed [63:0]   reference_o [NUM_DATA-1:0];
 
     // Instantiate module
     barrett_pipelined uut (
@@ -34,16 +34,15 @@ module barrett_tb;
 
     // Dumpfile 
     initial begin
-        $dumpfile("barrett.vcd");
-        $dumpvars(0, barrett_tb);
+        $dumpfile("barrett_random_tb.vcd");
+        $dumpvars(0, barrett_random_tb);
     end
 
-      logic [127:0] tmp;
     // Stimulus generation
     initial begin
 
         $display("\n=======================================");
-        $display("[%04t] > Start barrett test", $time);
+        $display("[%04t] > Start barrett_random test", $time);
         $display("=======================================\n");
 
         // Initialize inputs
@@ -72,7 +71,7 @@ module barrett_tb;
         #10;
         $display("[%04t] > Reset start signal", $time);
         start_i = 0;
-        // $display("");
+        $display("");
     end
 
     initial begin
@@ -80,7 +79,7 @@ module barrett_tb;
         $display("[%04t] < Wait for finish signal", $time);
         @(posedge finish_o)
         $display("[%04t] > Received finish signal", $time);
-        // $display("");
+        $display("");
         #1;
 
         for (integer i=0; i<NUM_DATA; i++) begin
@@ -98,7 +97,7 @@ module barrett_tb;
         end
 
         $display("\n=======================================");
-        $display("[%04t] > Finish barrett test", $time);
+        $display("[%04t] > Finish barrett_random test", $time);
         $display("=======================================\n");
 
         // Finish simulation
@@ -107,4 +106,4 @@ module barrett_tb;
 
     end
 
-endmodule : barrett_tb 
+endmodule : barrett_random_tb 

@@ -8,7 +8,7 @@ module barrett_pipelined (
   input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
   input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
   input  logic [63:0]             mu_i,      // Precomputed μ
-  output logic [127:0]            result_o,
+  output logic [63:0]            result_o,
   output logic                    valid_o    // Result valid flag
 );
 
@@ -101,7 +101,7 @@ multiplier_top multiplier_precomp(
 );
 
 logic [63:0] q_approx;
-assign q_approx = xmu_precomp >> (2 * 32);
+assign q_approx = xmu_precomp >> (2 * $clog2(m_i));
 
 logic busy_a_o;
 logic [127:0] qm_result;
@@ -116,7 +116,7 @@ multiplier_top multiplier_approx(
   .outdata_r_o(qm_result)
 );
 
-logic [127:0] result_next;
+logic [63:0] result_next;
 logic [63:0] tmp;
 
 always_comb begin
@@ -129,7 +129,7 @@ end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    result_o <= 127'b0;
+    result_o <= 64'b0;
   end else begin
     result_o <= result_next;
   end

@@ -128,7 +128,7 @@ end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    result_o <= 63'b0;
+    result_o <= 64'b0;
   end else begin
     result_o <= result_next;
   end
