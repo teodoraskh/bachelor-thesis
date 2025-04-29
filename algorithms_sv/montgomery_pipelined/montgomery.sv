@@ -12,7 +12,6 @@ module montgomery_pipelined (
   output logic                    valid_o    // Result valid flag
 );
 
-// PRECOMP, APPROX, 
 typedef enum logic[2:0] {LOAD, SCALE, REDUCE, FINISH} state_t;
 
 state_t curr_state, next_state;
@@ -23,7 +22,7 @@ logic d_finish;
 logic [63:0] x_delayed;
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 2),
+    .SHIFT((NUM_MULS + 2) * 2 + 1),
     .DATA(1) 
 ) shift_finish (
     .clk_i(clk_i),
@@ -82,10 +81,10 @@ end
 //             $time, curr_state.name(), x_i, x_delayed, busy_s_o, s_finish, m_finish, d_finish);
 // end
 
-always_ff @(posedge clk_i) begin
-    $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, out: %h, valid: %b",
-            $time, curr_state.name(), x_i, x_delayed, result_o, valid_o);
-end
+// always_ff @(posedge clk_i) begin
+//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, out: %h, valid: %b",
+//             $time, curr_state.name(), x_i, x_delayed, result_o, valid_o);
+// end
 
 logic busy_s_o;
 logic [127:0] lsb_scaled;
@@ -121,7 +120,7 @@ logic [63:0] tmp;
 
 always_comb begin
   result_next = result_o;
-  if (!busy_m_o) begin
+  if (m_finish) begin
     tmp = (x_delayed + m_rescaled) >> $clog2(m_i);
     result_next = (tmp < m_i) ? tmp : tmp - m_i;
   end

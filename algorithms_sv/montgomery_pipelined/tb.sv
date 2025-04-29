@@ -90,7 +90,7 @@ module montgomery_tb;
         $display("[%04t] > Set REF: %h", $time, reference_o[i]);
         $display("");
       end
-      
+
       #10;
       // $display("[%04t] > Reset start signal", $time);
       start_i = 0;
@@ -105,7 +105,7 @@ module montgomery_tb;
       #1;
       for(integer i = 0; i < NUM_DATA; i ++) begin
         $display("[%04t] > OUT data : %h", $time, outdata_r_o);
-        $display("[%04t] > REF data: %h", $time, reference_o[i]);
+        $display("[%04t] > REF data : %h", $time, reference_o[i]);
         if (outdata_r_o == reference_o[i])
             $display("[%04t] > Data is VALID", $time);
         else
