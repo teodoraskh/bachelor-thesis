@@ -18,7 +18,7 @@ typedef enum logic[2:0] {LOAD, PRECOMP, APPROX, REDUCE, FINISH} state_t;
 state_t curr_state, next_state;
 
 // 1, start_mult2, 
-logic start_mult, m_finish, p_finish, a_finish;
+logic start_mult, m_finish, a_finish;
 logic d_finish;
 logic [63:0] x_delayed;
 
@@ -57,6 +57,7 @@ always_ff @(posedge clk_i) begin
     end
 end
 
+
 always_comb begin
     next_state = curr_state; // default is to stay in current state
     case (curr_state)
@@ -84,18 +85,14 @@ always_comb begin
     endcase
 end
 
-// Stage 4: Subtract x - (q * m) and correct
-logic [63:0] tmp;
-always_ff @(posedge clk_i) begin
-  if(!busy_a_o) begin
-    tmp = x_delayed - qm_result;
-    result_o <= (tmp < m_i) ? tmp : tmp - m_i;
-  end
-end
+// always_ff @(posedge clk_i) begin
+//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, busy_p_o: %b, m_finish: %b, a_finish: %b, d_finish: %b",
+//             $time, curr_state.name(), x_i, x_delayed, busy_p_o, m_finish, a_finish, d_finish);
+// end
 
 always_ff @(posedge clk_i) begin
-    $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, busy_p_o: %b, m_finish: %b, a_finish: %b, d_finish: %b",
-            $time, curr_state.name(), x_i, x_delayed, busy_p_o, m_finish, a_finish, d_finish);
+    $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, out: %h, valid: %b",
+            $time, curr_state.name(), x_i, x_delayed, result_o, valid_o);
 end
 
 logic busy_p_o;
@@ -119,15 +116,34 @@ assign q_approx = xmu_precomp >> (2 * 32);
 logic busy_a_o;
 logic [127:0] qm_result;
 multiplier_top multiplier_approx(
-  .clk_i(clk_i),              // Rising edge active clk.
-  .rst_ni(rst_ni),            // Active low reset.
-  .start_i(m_finish),          // Start signal.
-  .busy_o(busy_a_o),          // Module busy.
-  .finish_o(a_finish),        // Module finish.
+  .clk_i(clk_i),             // Rising edge active clk.
+  .rst_ni(rst_ni),           // Active low reset.
+  .start_i(m_finish),        // Start signal.
+  .busy_o(busy_a_o),         // Module busy.
+  .finish_o(a_finish),       // Module finish.
   .indata_a_i(q_approx),     // Input data -> operand a.
-  .indata_b_i(m_i),     // Input data -> operand b.
+  .indata_b_i(m_i),          // Input data -> operand b.
   .outdata_r_o(qm_result)
 );
+
+logic [127:0] result_next;
+logic [63:0] tmp;
+
+always_comb begin
+  result_next = result_o;
+  if (!busy_a_o) begin
+    tmp = x_delayed - qm_result;
+    result_next = (tmp < m_i) ? tmp : tmp - m_i;
+  end
+end
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    result_o <= 127'b0;
+  end else begin
+    result_o <= result_next;
+  end
+end
 
 assign valid_o = d_finish;
 

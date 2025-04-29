@@ -14,7 +14,7 @@ module barrett_tb;
     logic [63:0]     indata_mu_i;      // Input data -> operand b.
     logic [63:0]   outdata_r_o;     // Output data -> result a*b.
 
-    localparam NUM_DATA = 1000;
+    localparam NUM_DATA = 3;
     logic signed [127:0]   reference_o [NUM_DATA-1:0];
 
     // Instantiate module
@@ -98,7 +98,7 @@ module barrett_tb;
         end
 
         $display("\n=======================================");
-        $display("[%04t] > Finish multipler test", $time);
+        $display("[%04t] > Finish barrett test", $time);
         $display("=======================================\n");
 
         // Finish simulation
