@@ -11,6 +11,7 @@ module barrett_random_tb;
     logic                       ready_o;         // First multiplication is valid
     logic [63:0]                indata_x_i;      // Input data -> operand a.
     logic [63:0]                indata_m_i;      // Input data -> operand b.
+    logic [63:0]                indata_m_bl_i;   // Modulus Bitlength
     logic [63:0]                indata_mu_i;     // Input data -> operand b.
     logic [63:0]                outdata_r_o;     // Output data -> result a*b.
 
@@ -24,6 +25,7 @@ module barrett_random_tb;
         .start_i                (start_i),         // Start signal.
         .x_i                    (indata_x_i),          // Module busy. 
         .m_i                    (indata_m_i),        // Module finish.
+        .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
         .mu_i                   (indata_mu_i),      // Input data -> operand a.
         .result_o               (outdata_r_o),
         .valid_o                (finish_o)
@@ -39,6 +41,7 @@ module barrett_random_tb;
     end
 
     // Stimulus generation
+    assign indata_m_bl_i = $clog2(indata_m_i);
     initial begin
 
         $display("\n=======================================");
@@ -52,6 +55,7 @@ module barrett_random_tb;
         indata_x_i = 0;
         indata_m_i = 64'h0000_0000_9215_3525;
         indata_mu_i = 64'h2CDE_B2B0;
+        // indata_m_bl_i = $clog2(indata_m_i);
 
         #20;
         $display("[%04t] > Set reset signal", $time);

@@ -7,8 +7,9 @@ module barrett_pipelined (
   input  logic                    start_i,
   input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
   input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
+  input  logic [63:0]             m_bl_i,
   input  logic [63:0]             mu_i,      // Precomputed μ
-  output logic [63:0]            result_o,
+  output logic [63:0]             result_o,
   output logic                    valid_o    // Result valid flag
 );
 
@@ -101,7 +102,7 @@ multiplier_top multiplier_precomp(
 );
 
 logic [63:0] q_approx;
-assign q_approx = xmu_precomp >> (2 * $clog2(m_i));
+assign q_approx = xmu_precomp >> (2 * m_bl_i);
 
 logic busy_a_o;
 logic [127:0] qm_result;

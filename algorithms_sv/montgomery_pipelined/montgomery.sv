@@ -7,6 +7,7 @@ module montgomery_pipelined (
   input  logic                    start_i,
   input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
   input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
+  input  logic [63:0]             m_bl_i,
   input  logic [63:0]             minv_i,       // Input (e.g., 64-bit)
   output logic [63:0]             result_o,
   output logic                    valid_o    // Result valid flag
@@ -94,13 +95,13 @@ multiplier_top multiplier_precomp(
   .start_i(start_i),          // Start signal.
   .busy_o(busy_s_o),          // Module busy.
   .finish_o(s_finish),        // Module finish.
-  .indata_a_i(x_i & ((1 << $clog2(m_i)) - 1)),           // Input data -> operand a.
+  .indata_a_i(x_i & ((1 << m_bl_i) - 1)),           // Input data -> operand a.
   .indata_b_i(minv_i),          // Input data -> operand b.
   .outdata_r_o(lsb_scaled)
 );
 
 logic [63:0] m;
-assign m = lsb_scaled & ((1 << $clog2(m_i)) - 1);
+assign m = lsb_scaled & ((1 << m_bl_i) - 1);
 
 logic busy_m_o;
 logic [127:0] m_rescaled;
@@ -121,7 +122,7 @@ logic [63:0] tmp;
 always_comb begin
   result_next = result_o;
   if (m_finish) begin
-    tmp = (x_delayed + m_rescaled) >> $clog2(m_i);
+    tmp = (x_delayed + m_rescaled) >> m_bl_i;
     result_next = (tmp < m_i) ? tmp : tmp - m_i;
   end
 end

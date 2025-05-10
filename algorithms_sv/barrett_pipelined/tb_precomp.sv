@@ -10,19 +10,20 @@ module barrett_precomp_tb;
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i   [49-1:0];      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_mu_i;   // Input data -> modular inverse.
+    logic [64-1:0]              indata_m_bl_i;   // Modulus Bitlength
+    logic [64-1:0]              indata_mu_i;     // Input data -> modular inverse.
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
-
     logic [64-1:0]              reference_o [49-1:0];
 
     // Instantiate module
     barrett_pipelined uut (
-      .clk_i                  (clk_i),           // Rising edge active clk.
-      .rst_ni                 (rst_ni),          // Active low reset.
-      .start_i                (start_i),         // Start signal.
-      .x_i                    (indata_x),        // Module busy. 
-      .m_i                    (indata_m_i),      // Module finish.
-      .mu_i                   (indata_mu_i),     // Input data -> operand a.
+      .clk_i                  (clk_i),              // Rising edge active clk.
+      .rst_ni                 (rst_ni),             // Active low reset.
+      .start_i                (start_i),            // Start signal.
+      .x_i                    (indata_x),           // Module busy. 
+      .m_i                    (indata_m_i),         // Module finish.
+      .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
+      .mu_i                   (indata_mu_i),        // Input data -> operand a.
       .result_o               (outdata_r_o),
       .valid_o                (finish_o)
     );
@@ -57,6 +58,7 @@ module barrett_precomp_tb;
     end
 
     logic [63:0] indata_x;
+    assign indata_m_bl_i = $clog2(indata_m_i);
 
     // Stimulus generation
     initial begin

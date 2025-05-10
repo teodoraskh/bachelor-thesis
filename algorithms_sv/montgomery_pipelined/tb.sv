@@ -11,6 +11,7 @@ module montgomery_tb;
     logic [64-1:0]              indata_x_i   [49-1:0];      // Input data -> operand a.
     logic [64-1:0]              indata_x_m_i [49-1:0];      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
+    logic [64-1:0]              indata_m_bl_i;
     logic [64-1:0]              indata_minv_i;   // Input data -> modular inverse.
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
 
@@ -23,6 +24,7 @@ module montgomery_tb;
       .start_i                (start_i),    
       .x_i                    (indata_x_m),
       .m_i                    (indata_m_i),
+      .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
       .minv_i                 (indata_minv_i),
       .result_o               (outdata_r_o),
       .valid_o                (finish_o)    
@@ -61,6 +63,7 @@ module montgomery_tb;
     logic [63:0] indata_x;
     logic [63:0] indata_x_m;
 
+    assign indata_m_bl_i = $clog2(indata_m_i);
     // Stimulus generation
     initial begin
       $display("\n=======================================");
