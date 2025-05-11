@@ -52,11 +52,17 @@ module shiftadd_tb;
         rst_ni = 0;
         start_i = 0;
         // indata_m_i = 64'h3A32E4C4C7A8C21B;
+        // Mersenne:
         // indata_m_i = 32'h7FFFFFFF;
-        indata_m_i = 32'h80000001;
+        indata_m_i = 32'h7FFFFF;
+
+        // Fermat:
+        // indata_m_i = 32'h80000001;
+        // indata_m_i = 32'h21;
+        // indata_m_i = 32'h2001;
         indata_x_i = 64'h1;
 
-        inp_file  = $fopen("input_ez.txt", "r");
+        inp_file  = $fopen("input.txt", "r");
 
         while (indata_x_i != 0) begin
           rst_ni = 0;
