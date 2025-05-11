@@ -34,6 +34,7 @@ end
 logic [63:0] hi;
 logic [63:0] lo;
 logic [63:0] mask;
+logic [63:0] bitlength;
 
 logic [31:0] msb_mask;    
 logic [31:0] inner_mask;  
@@ -47,14 +48,14 @@ assign inner_mask  = ((1 << (m_bl_i - 1)) - 1) & ~1;
 assign is_fermat   = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
 assign is_mersenne = ((m_i ^ ((1 << m_bl_i) - 1)) == 0);
 assign fold_sign   = is_fermat ? 0 : 1;
+assign bitlength   = is_fermat ? (m_bl_i - 1) : m_bl_i;
 
 
 // assign hi = (x_i >> m_bl_i);
 // assign hi = ((x_i >> (idx_p * m_bl_i)) & ((1 << (m_bl_i-1))-1));
 assign mask = is_fermat ? ((1 << (m_bl_i-1))-1) : m_i;
-// assign mask = m_i;
-assign hi = ((x_i >> (idx_p * m_bl_i)) & mask);
-assign lo = (x_i & ((1 << m_bl_i) - 1));
+assign hi = ((x_i >> (idx_p * bitlength)) & mask);
+assign lo = (x_i & ((1 << bitlength) - 1));
 
 always_comb begin
   next_state    = curr_state; // default is to stay in current state
@@ -72,7 +73,6 @@ always_comb begin
         if(hi == 0) begin
             next_state = FINISH;
         end else begin
-            // accumulator_n = accumulator_p + hi;
             if(fold_sign) begin
                 accumulator_n = accumulator_p + hi;
             end else begin
@@ -93,8 +93,8 @@ always_comb begin
 end
 
 // always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, hi: %h, idx_p: %d, res: %h, acc?: %h, fold: %d",
-//             $time, curr_state.name(), x_i, hi, idx_p, result_o, accumulator_p, fold_sign);
+//     $display("Cycle: %d, State: %s, x_i: %h, hi: %h, idx_p: %d, res: %h, acc?: %h, is neg: %d",
+//             $time, curr_state.name(), x_i, hi, idx_p, result_o, accumulator_p, (is_fermat && accumulator_n < 0));
 // end
 
 logic is_gt_mod;  
@@ -104,9 +104,11 @@ assign is_lt_zero = (accumulator_p < 0);
 
 assign valid_o = (curr_state == FINISH);
 // assign result_o = (curr_state == FINISH) ? (is_gt_mod ? accumulator_p - $signed(m_i) : (is_lt_zero ? $signed(m_i) + accumulator_p : accumulator_p)) : 64'b0;
-assign result_o = (curr_state == FINISH) ? 
-    ((accumulator_p >= m_i) ? accumulator_p - m_i : 
-     (accumulator_p < 0)    ? accumulator_p + m_i : accumulator_p) : 64'b0;
+// assign result_o = (curr_state == FINISH) ? ((accumulator_p >= m_i) ? accumulator_p - m_i : accumulator_p) : 64'b0;
+
+     assign result_o = (curr_state == FINISH) ? 
+    ((accumulator_p >= $signed(m_i)) ? accumulator_p - $signed(m_i) : 
+     (accumulator_p < 0)    ? accumulator_p + $signed(m_i) : accumulator_p) : 64'b0;
 
 
 endmodule : shiftadd_serialized
