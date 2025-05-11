@@ -52,8 +52,8 @@ module shiftadd_tb;
         rst_ni = 0;
         start_i = 0;
         // indata_m_i = 64'h3A32E4C4C7A8C21B;
-        indata_m_i = 32'h7FFFFFFF;
-        // indata_m_i = 32'h80000001;
+        // indata_m_i = 32'h7FFFFFFF;
+        indata_m_i = 32'h80000001;
         indata_x_i = 64'h1;
 
         inp_file  = $fopen("input_ez.txt", "r");
