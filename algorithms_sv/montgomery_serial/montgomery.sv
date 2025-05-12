@@ -1,10 +1,12 @@
+`timescale 1ns / 1ps
 module montgomery_serialized (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [63:0]             x_i,       // Input: multiplication result from NTT, already in Montgomery form
   input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  output logic [63:0]            result_o,
+  input  logic [63:0]             m_bl_i,
+  output logic [63:0]             result_o,
   output logic                    valid_o    // Result valid flag
 );
 // 1. Get xR^2 mod N as input, reduce twice to get x mod N
@@ -43,7 +45,7 @@ always_comb begin
       REDUCE : begin
         // WARNING: $bits(m_i) will always return 64/128/whatever!
         // find another solution to check the bit width with precision!
-        if(idx_p == $clog2(m_i + 1)) begin
+        if(idx_p == m_bl_i) begin
           next_state = FINISH;
         end else begin
           if(accumulator_p[0] == 1) begin

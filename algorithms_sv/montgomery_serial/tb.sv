@@ -1,6 +1,6 @@
 
 // import multiplier_pkg::*;
-
+`timescale 1ns / 1ps
 module montgomery_tb;
 
     logic                       clk_i;           // Rising edge active clk.
@@ -10,6 +10,7 @@ module montgomery_tb;
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i;      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
+    logic [64-1:0]              indata_m_bl_i;
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
 
     logic [64-1:0]              reference_o;
@@ -21,6 +22,7 @@ module montgomery_tb;
         .start_i                (start_i),    
         .x_i                    (indata_x_i),
         .m_i                    (indata_m_i),
+        .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
         .result_o               (outdata_r_o),
         .valid_o                (finish_o)    
     );
@@ -36,7 +38,7 @@ module montgomery_tb;
 
     integer inp_file;
     logic [63:0] indata_x;
-
+    assign indata_m_bl_i = $clog2(indata_m_i);
     // Stimulus generation
     initial begin
         $display("\n=======================================");
@@ -102,7 +104,8 @@ module montgomery_tb;
         $display("=======================================\n");
 
         // Finish simulation
-        #100;
+        #10;
+        $display("[%0t] > Calling $finish", $time);
         $finish;
     end
 

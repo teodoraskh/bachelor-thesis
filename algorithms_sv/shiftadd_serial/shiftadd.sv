@@ -16,7 +16,7 @@ logic [63:0] accumulator_p, accumulator_n;
 logic [8:0] idx_p, idx_n;
 logic d_finish;
 
-always_ff @(posedge clk_i) begin
+always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
         accumulator_p <= lo;
         curr_state    <= LOAD;

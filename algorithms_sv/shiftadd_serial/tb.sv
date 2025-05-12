@@ -9,8 +9,8 @@ module shiftadd_tb;
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i;      // Input data -> operand a.
-    logic [32-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [32-1:0]              indata_m_bl_i;      // Input data -> operand b.
+    logic [64-1:0]              indata_m_i;      // Input data -> operand b.
+    logic [64-1:0]              indata_m_bl_i;      // Input data -> operand b.
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
 
     logic [64-1:0]              reference_o;
@@ -37,7 +37,6 @@ module shiftadd_tb;
     end
 
     integer inp_file;
-    logic [63:0] indata_x;
 
     assign indata_m_bl_i = $clog2(indata_m_i);
 
@@ -53,16 +52,25 @@ module shiftadd_tb;
         start_i = 0;
         // indata_m_i = 64'h3A32E4C4C7A8C21B;
         // Mersenne:
-        // indata_m_i = 32'h7FFFFFFF;
-        indata_m_i = 32'h7FFFFF;
+         indata_m_i = 64'h7FFFFFFF;
+//        indata_m_i = 32'h7FFFFF;
 
         // Fermat:
         // indata_m_i = 32'h80000001;
         // indata_m_i = 32'h21;
         // indata_m_i = 32'h2001;
         indata_x_i = 64'h1;
-
+//        shiftadd.sim/sim_1/behav/Text/input.txt
+//        inp_file  = $fopen("shiftadd.sim/sim_1/behav/Text/input.txt", "r");
         inp_file  = $fopen("input.txt", "r");
+//          inp_file  = $fopen("/home/teuo/Documents/uni_files/Wintersemester_TUG/WS2024/ISW/isw2024alexandrescu/algorithms_sv/shiftadd_serial/input.txt", "r");
+          if (inp_file == 0) begin
+              $display("ERROR: Failed to open file.");
+              $finish;
+          end else begin
+              $display("File opened.");
+          end 
+
 
         while (indata_x_i != 0) begin
           rst_ni = 0;
