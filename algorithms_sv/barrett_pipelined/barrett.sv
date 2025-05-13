@@ -13,17 +13,17 @@ module barrett_pipelined (
   output logic                    valid_o    // Result valid flag
 );
 
-typedef enum logic[2:0] {LOAD, APPROX, REDUCE, FINISH} state_t;
+typedef enum logic[3:0] {IDLE, LOAD, APPROX, REDUCE, FINISH} state_t;
 
 state_t curr_state, next_state;
 
 // 1, start_mult2, 
-logic m_finish, a_finish;
+logic m_finish, a_finish, start_gated;
 logic d_finish;
 logic [63:0] x_delayed;
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 1), 
+    .SHIFT((NUM_MULS + 2) * 2), 
     .DATA(1)
 ) shift_finish (
     .clk_i(clk_i),
@@ -40,6 +40,42 @@ shiftreg #(
     .data_o(x_delayed)
 );
 
+logic early_bypass;
+logic [63:0] bypass_value;
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+        bypass_value <= 64'b0;
+    end else begin
+        bypass_value <= x_i;
+    end
+end
+
+assign early_bypass = (x_i < m_i) && start_i;
+assign start_gated  = start_i && !early_bypass;
+
+// 2. Delay early stop flag through pipeline
+logic early_bypass_valid;
+shiftreg #(
+    .SHIFT((NUM_MULS + 2) * 2+2),
+    .DATA(1)
+) delay_bypass_flag (
+    .clk_i(clk_i),
+    .data_i(early_bypass),
+    .data_o(early_bypass_valid)
+);
+
+// 3. Delay bypass value through pipeline
+// logic [63:0] delayed_bypass_value;
+// shiftreg #(
+//     .SHIFT((NUM_MULS + 2) * 2+2),
+//     .DATA(64)
+// ) delay_bypass_value (
+//     .clk_i(clk_i),
+//     .data_i(bypass_value),
+//     .data_o(delayed_bypass_value)
+// );
+
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
@@ -54,11 +90,24 @@ end
 always_comb begin
     next_state = curr_state; // default is to stay in current state
     case (curr_state)
-        LOAD : begin
-            if (start_i) begin
-                next_state = APPROX;
-            end
+        IDLE: begin
+          if (curr_state == IDLE && start_i) begin
+              if (x_i < m_i) begin
+                  next_state = FINISH;
+              end else begin
+                  next_state = LOAD;
+              end
+          end
         end
+        
+        LOAD: begin
+            if (busy_p_o) next_state = APPROX;
+        end
+        // LOAD : begin
+        //     if (start_i) begin
+        //         next_state = APPROX;
+        //     end
+        // end
         APPROX: begin
           if(a_finish) begin // a_finish can indicate that the approximation has completed
             next_state = REDUCE;
@@ -90,14 +139,19 @@ end
 
 logic busy_p_o;
 logic [127:0] xmu_precomp;
+logic [63:0] safe_x_i;
+logic [63:0] safe_mu_i;
+
+assign safe_x_i = start_gated ? x_i : 64'b0;
+assign safe_mu_i = start_gated ? mu_i : 64'b0;
 multiplier_top multiplier_precomp(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
-  .start_i(start_i),          // Start signal.
+  .start_i(start_gated),          // Start signal.
   .busy_o(busy_p_o),          // Module busy.
   .finish_o(m_finish),        // Module finish.
-  .indata_a_i(x_i),           // Input data -> operand a.
-  .indata_b_i(mu_i),          // Input data -> operand b.
+  .indata_a_i(safe_x_i),           // Input data -> operand a.
+  .indata_b_i(safe_mu_i),           // Input data -> operand a.
   .outdata_r_o(xmu_precomp)
 );
 
@@ -121,21 +175,27 @@ logic [63:0] result_next;
 logic [63:0] tmp;
 
 always_comb begin
-  result_next = result_o;
-  if (a_finish) begin
-    tmp = x_delayed - qm_result;
+    tmp = x_delayed - qm_result[63:0];
     result_next = (tmp < m_i) ? tmp : tmp - m_i;
-  end
 end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-    result_o <= 64'b0;
-  end else begin
-    result_o <= result_next;
-  end
+    if (!rst_ni) begin
+        result_o <= 64'b0;
+        valid_o <= 1'b0;
+    end else begin
+        if (early_bypass_valid) begin
+            result_o <= x_delayed;
+            valid_o <= 1'b1;
+        end
+        else if (d_finish) begin
+            result_o <= result_next;
+            valid_o <= 1'b1;
+        end
+        else begin
+            valid_o <= 1'b0;
+        end
+    end
 end
-
-assign valid_o = d_finish;
 
 endmodule : barrett_pipelined
