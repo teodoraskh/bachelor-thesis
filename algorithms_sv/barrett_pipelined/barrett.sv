@@ -54,27 +54,15 @@ end
 assign early_bypass = (x_i < m_i) && start_i;
 assign start_gated  = start_i && !early_bypass;
 
-// 2. Delay early stop flag through pipeline
 logic early_bypass_valid;
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2+2),
+    .SHIFT((NUM_MULS + 2) * 2),
     .DATA(1)
 ) delay_bypass_flag (
     .clk_i(clk_i),
     .data_i(early_bypass),
     .data_o(early_bypass_valid)
 );
-
-// 3. Delay bypass value through pipeline
-// logic [63:0] delayed_bypass_value;
-// shiftreg #(
-//     .SHIFT((NUM_MULS + 2) * 2+2),
-//     .DATA(64)
-// ) delay_bypass_value (
-//     .clk_i(clk_i),
-//     .data_i(bypass_value),
-//     .data_o(delayed_bypass_value)
-// );
 
 
 always_ff @(posedge clk_i) begin
