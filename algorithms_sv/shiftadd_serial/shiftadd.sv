@@ -13,14 +13,11 @@ localparam NUM_CHUNKS = 3;
 localparam DATA_LENGTH = 64;
 localparam CHUNK_LENGTH = 32;
 
-typedef enum logic[1:0] {LOAD, COMP_BLOCK, REDUCE, FINISH} state_t;
+typedef enum logic[2:0] {LOAD, COMP_BLOCK, REDUCE, ADJUST, FINISH} state_t;
 state_t curr_state, next_state;
-//  TODO: replace 64 with DATA_LENGTH
-//  TODO: replace 32 with CHUNK_LENGTH
-//  TODO: replace  3 with NUM_CHUNKS
 
 logic [1:0]  hi_index;
-logic [DATA_LENGTH-1:0] result_p;
+logic [DATA_LENGTH-1:0] result_p, result_n;
 logic [DATA_LENGTH-1:0] mul_i;
 logic [DATA_LENGTH-1:0] result;
 logic [CHUNK_LENGTH-1:0] higher_bits [NUM_CHUNKS-1:0];
@@ -29,7 +26,10 @@ logic fold_sign_p, fold_sign_n;
 logic ctrl_update_operands;
 logic ctrl_update_result;
 logic ctrl_update_fold_sign;
+logic ctrl_update_num_folds;
 logic ctrl_update_mul_counter;
+logic ctrl_adjust_result;
+logic ctrl_clear_regs;
 
 
 logic [DATA_LENGTH-1:0] lo;
@@ -37,7 +37,8 @@ logic [DATA_LENGTH-1:0] mask;
 logic [DATA_LENGTH-1:0] bitlength;
 
 logic [DATA_LENGTH-1:0] msb_mask;    
-logic [DATA_LENGTH-1:0] inner_mask;  
+logic [DATA_LENGTH-1:0] inner_mask;
+logic [NUM_CHUNKS-1:0]  num_folds;
 logic is_fermat;   
 logic is_mersenne; 
 
@@ -59,10 +60,13 @@ endgenerate
 
 
 always_comb begin
-    ctrl_update_operands    = (curr_state == LOAD);
-    ctrl_update_mul_counter = (curr_state == COMP_BLOCK);
-    ctrl_update_fold_sign   = (curr_state == REDUCE);
-    ctrl_update_result      = (curr_state == REDUCE);
+  ctrl_update_operands    = (curr_state == LOAD);
+  ctrl_update_mul_counter = (curr_state == REDUCE);
+  ctrl_update_fold_sign   = (curr_state == REDUCE && is_fermat);
+  ctrl_update_num_folds   = (curr_state == REDUCE);
+  ctrl_update_result      = (curr_state == REDUCE);
+  ctrl_adjust_result      = (curr_state == ADJUST);
+  ctrl_clear_regs         = ((next_state != FINISH) && (curr_state == FINISH));
 end
 
 
@@ -71,13 +75,12 @@ always_comb begin
   case (curr_state)
       LOAD : begin
         if (start_i) begin
-            next_state = REDUCE;
+            next_state = COMP_BLOCK;
         end
       end
       COMP_BLOCK : begin
-        // TODO: change 2 into NUM_CHUNKS - 1
-        if (hi_index == NUM_CHUNKS-1) begin
-            next_state = FINISH;
+        if (num_folds == NUM_CHUNKS-1) begin
+            next_state = ADJUST;
         end else  begin
             next_state = REDUCE;
         end
@@ -85,8 +88,15 @@ always_comb begin
       REDUCE : begin
         next_state = COMP_BLOCK;
       end
+      ADJUST : begin
+        if (adjust_done) begin
+          next_state = FINISH;
+        end else begin
+          next_state = ADJUST; // stay here until done
+        end
+      end
       FINISH : begin
-        next_state = FINISH;
+        next_state = LOAD;
       end
       default : begin
         next_state = LOAD;
@@ -94,21 +104,39 @@ always_comb begin
   endcase
 end
 
-assign valid_o = (curr_state == FINISH);
+assign valid_o  = (curr_state == FINISH);
+assign result_o = result_n;
 
-always_comb begin
-  if(curr_state == FINISH) begin
+logic adjust_cycle_done;
+logic adjust_done;
+assign adjust_done = adjust_cycle_done;
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni || ctrl_update_operands) begin
+    adjust_cycle_done <= 1'b0;
+  end else if (ctrl_adjust_result) begin
+    adjust_cycle_done <= 1'b1;  // done after one cycle in ADJUST
+  end else begin
+    adjust_cycle_done <= 1'b0;
+  end
+end
+
+
+always_ff @(posedge clk_i) begin
+  if(!rst_ni || ctrl_update_operands) begin
+    result_n <= 64'b0;
+  end
+  else if (ctrl_adjust_result) begin
     if(result_p >= m_i) begin
-      result_o = result_p - m_i;
+      result_n <= result_p - m_i;
     end 
     else if($signed(result_p) < 0) begin
-      result_o = result_p + m_i;
+      result_n <= result_p + m_i;
     end
     else begin
-      result_o = result_p;
+      result_n <= result_p;
     end
   end else begin
-    result_o = 64'b0;
+    result_n <= 64'b0;
   end
 end
 
@@ -118,10 +146,11 @@ always_comb begin
     end
 end
 
-always_ff @(posedge clk_i) begin
-    $display("Cycle: %d, State: %s, start_i: %d, result_p: %h, valid_o: %d, index_p: %d",
-            $time, curr_state.name(), start_i, result_p, valid_o, hi_index);
-end
+// always_ff @(posedge clk_i) begin
+//     $display("Cycle: %d, State: %s, start_i: %d, result_n: %h, result_p: %h, valid_o: %d, num_folds: %d, adj_res: %d",
+//             $time, curr_state.name(), start_i, result_n, result_p, valid_o, num_folds, ctrl_adjust_result);
+// end
+
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
@@ -133,7 +162,7 @@ always_ff @(posedge clk_i) begin
 end
 
 always_ff @(posedge clk_i) begin
-    if (rst_ni == 0) begin
+    if (rst_ni == 0 || ctrl_update_operands) begin
         hi_index <= 0;
     end 
     else if (ctrl_update_mul_counter) begin
@@ -141,9 +170,9 @@ always_ff @(posedge clk_i) begin
     end
 end
 
-
 always_ff @(posedge clk_i) begin
-    if (rst_ni == 0) begin
+  // on reset, lo is 0, and that will mess up the computation if we use this: rst_ni == 0 || ctrl_clear_regs
+    if (ctrl_update_operands || start_i) begin
         result_p <= lo;
     end 
     else if (ctrl_update_result) begin
@@ -156,7 +185,7 @@ always_ff @(posedge clk_i) begin
 end
 
 always_ff @(posedge clk_i) begin
-    if(!rst_ni) begin
+    if(!rst_ni || ctrl_update_operands) begin
         fold_sign_p <= 1;
     end
     else if(ctrl_update_fold_sign) begin
@@ -164,12 +193,24 @@ always_ff @(posedge clk_i) begin
     end
 end
 
+always_ff @(posedge clk_i) begin
+    if(!rst_ni || ctrl_update_operands) begin
+        num_folds <= 0;
+    end
+    else if(ctrl_update_num_folds) begin
+        num_folds <= num_folds + 1;
+    end
+end
+
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
+  if (!rst_ni || ctrl_clear_regs) begin
     curr_state  <= LOAD;
   end else begin
     curr_state  <= next_state;
   end
 end
+
+// logic [63:0] curr_bits;
+// assign curr_bits = higher_bits[hi_index];
 
 endmodule : shiftadd_serialized

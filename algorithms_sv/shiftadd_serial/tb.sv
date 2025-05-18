@@ -42,57 +42,51 @@ module shiftadd_tb;
 
     // Stimulus generation
     initial begin
-        $display("\n=======================================");
-        $display("[%04t] > Start shiftadd test", $time);
-        $display("=======================================\n");
+    $display("\n=======================================");
+    $display("[%04t] > Start shiftadd test", $time);
+    $display("=======================================\n");
 
-        // Initialize inputs
-        clk_i = 0;
-        rst_ni = 0;
-        start_i = 0;
-        // indata_m_i = 64'h3A32E4C4C7A8C21B;
-        // Mersenne:
-        //  indata_m_i = 64'h7FFFFFFF;
-//        indata_m_i = 32'h7FFFFF;
+    clk_i     = 0;
+    rst_ni    = 0;
+    start_i   = 0;
+    indata_x_i = 64'h1;
 
-        // Fermat:
-        indata_m_i = 32'h80000001;
-        // indata_m_i = 32'h21;
-        // indata_m_i = 32'h2001;
-        indata_x_i = 64'h1;
-//        shiftadd.sim/sim_1/behav/Text/input.txt
-//        inp_file  = $fopen("shiftadd.sim/sim_1/behav/Text/input.txt", "r");
-        inp_file  = $fopen("input.txt", "r");
-//          inp_file  = $fopen("/home/teuo/Documents/uni_files/Wintersemester_TUG/WS2024/ISW/isw2024alexandrescu/algorithms_sv/shiftadd_serial/input.txt", "r");
-          if (inp_file == 0) begin
-              $display("ERROR: Failed to open file.");
-              $finish;
-          end else begin
-              $display("File opened.");
-          end 
+    // indata_m_i = 64'h3A32E4C4C7A8C21B;
+    // indata_m_i = 64'h7FFFFFFF; // Mersenne
+    indata_m_i = 32'h80000001; // Fermat
+    // indata_m_i = 32'h21;
+    // indata_m_i = 32'h2001;
 
+    inp_file = $fopen("input.txt", "r");
+    if (inp_file == 0) begin
+        $display("ERROR: Failed to open file.");
+        $finish;
+    end else begin
+        $display("File opened.");
+    end
 
-        while (indata_x_i != 0) begin
-          rst_ni = 0;
-          $fscanf(inp_file, "%h", indata_x_i);
-          #20;
+    #10;
+    rst_ni = 0;
+    #40;
+    rst_ni = 1;
+    #20;
 
-          rst_ni = 1;
+    while (!$feof(inp_file)) begin
+        $fscanf(inp_file, "%h", indata_x_i);
 
-          #10;
-
-          if(indata_x_i != 0) begin
+        if (indata_x_i != 0) begin
             reference_o = indata_x_i % indata_m_i;
+
+            // pulse start_i for 1 cycle at rising clock edge
+            @(posedge clk_i);
             start_i = 1;
-
-            $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
-
-            #10;
-
+            @(posedge clk_i);
             start_i = 0;
 
-            #10;
-            @(posedge finish_o)
+            // wait for finish_o or valid_o to go high
+            wait (finish_o == 1);
+
+            @(posedge clk_i);  // Optional extra wait cycle
 
             $display("[%04t] > Received data : %h", $time, outdata_r_o);
             $display("[%04t] > Reference data: %h", $time, reference_o);
@@ -101,16 +95,16 @@ module shiftadd_tb;
             else
                 $display("[%04t] > Data is INVALID", $time);
             $display("");
-          end
         end
-
-        $display("\n=======================================");
-        $display("[%04t] > Finish shiftadd serialized test", $time);
-        $display("=======================================\n");
-
-        // Finish simulation
-        #100;
-        $finish;
     end
+
+    $display("\n=======================================");
+    $display("[%04t] > Finish shiftadd serialized test", $time);
+    $display("=======================================\n");
+
+    // Finish simulation
+    #100;
+    $finish;
+end
 
 endmodule : shiftadd_tb 
