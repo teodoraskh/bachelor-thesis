@@ -70,7 +70,8 @@ module shiftadd_tb;
       clk_i = 0;
       rst_ni = 1;
       start_i = 0;
-      indata_m_i = 64'h7FFFFFFF;
+      indata_m_i = 64'h7FFFFFFF; // Mersenne
+      // indata_m_i = 64'h80000001; // Fermat
 
       #20;
       // $display("[%04t] > Set reset signal", $time);

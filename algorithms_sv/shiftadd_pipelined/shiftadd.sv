@@ -33,7 +33,6 @@ shiftreg #(
     .data_i(start_i),
     .data_o(d_finish)
 );
-// logic [CHUNK_LENGTH-1:0] higher_bits [NUM_CHUNKS-1:0];
 
 logic [DATA_LENGTH-1:0] lo;
 logic [DATA_LENGTH-1:0] mask;
@@ -82,44 +81,17 @@ generate
             d_accumulator[i] <= d_accumulator[i-1] + d_chunk[i];
           end
           else begin
-            d_accumulator[i] <= d_accumulator[i-1] + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
+            if($signed(d_accumulator[i-1]) < 0) begin
+              d_accumulator[i] <= (d_accumulator[i-1] + $signed(m_i)) + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
+            end
+            else begin
+              d_accumulator[i] <= d_accumulator[i-1] + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
+            end
           end
         end
       end
   end
 endgenerate
-
-// generate
-//   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
-//     // Stage 1: Compute tmp[i]
-//     always_ff @(posedge clk_i) begin
-//       if (i == 0) begin
-//         d_accumulator[i] <= tmp[i];
-//       end else begin
-//         if(is_mersenne) begin
-//             d_accumulator[i] <= tmp[i];
-//           end
-//           else if (is_fermat && $signed(tmp[i]) < 0) begin
-//             d_accumulator[i] <= tmp[i] + $signed(m_i);
-//           end
-//         // d_accumulator[i] <= d_accumulator[i-1] + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
-//       end
-//     end
-//   end
-// endgenerate
-
-// generate
-//   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
-//     // Stage 2: Normalize tmp[i] into d_accumulator[i]
-//     always_ff @(posedge clk_i or negedge rst_ni) begin
-//       if (is_fermat && $signed(tmp[i]) < 0) begin
-//         d_accumulator[i] <= tmp[i] + $signed(m_i);
-//       end else begin
-//         d_accumulator[i] <= tmp[i];
-//       end
-//     end
-//   end
-// endgenerate
 
 generate
   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
@@ -137,21 +109,14 @@ generate
   end
 endgenerate
 
-// generate
-//     for (genvar i = 0; i < NUM_CHUNKS; i++) begin
-//         assign d_result[i] = (d_accumulator[i] >= m_i) ? d_accumulator[i] - m_i : d_accumulator[i];
-//     end
-// endgenerate
-
-
 always_comb begin
     for (int i = 0; i < NUM_CHUNKS; i++) begin
       // if(curr_state == FINISH) begin
         if (d_accumulator[i] >= m_i) begin
           d_result[i] = d_accumulator[i] - m_i;
         end
-        else if (d_accumulator[i] < 0) begin
-          d_result[i] = d_accumulator[i] + m_i;
+        else if (is_fermat && $signed(d_accumulator[i]) < 0) begin
+          d_result[i] = d_accumulator[i] + $signed(m_i);
         end
       // end
         else begin
@@ -185,59 +150,6 @@ end
 assign valid_o  = d_finish;
 assign result_o = d_result[NUM_CHUNKS-1];
 
-// logic adjust_cycle_done;
-// logic adjust_done;
-// assign adjust_done = adjust_cycle_done;
-// always_ff @(posedge clk_i or negedge rst_ni) begin
-//   if (!rst_ni || ctrl_update_operands) begin
-//     adjust_cycle_done <= 1'b0;
-//   end else if (ctrl_adjust_result) begin
-//     adjust_cycle_done <= 1'b1;  // done after one cycle in ADJUST
-//   end else begin
-//     adjust_cycle_done <= 1'b0;
-//   end
-// end
-
-
-// always_ff @(posedge clk_i) begin
-//   if(!rst_ni || ctrl_update_operands) begin
-//     result_n <= 64'b0;
-//   end
-//   else if (ctrl_adjust_result) begin
-//     if(result_p >= m_i) begin
-//       result_n <= result_p - m_i;
-//     end 
-//     else if($signed(result_p) < 0) begin
-//       result_n <= result_p + m_i;
-//     end
-//     else begin
-//       result_n <= result_p;
-//     end
-//   end else begin
-//     result_n <= 64'b0;
-//   end
-// end
-
-// always_comb begin
-//     if (is_fermat && $signed(result_p) < 0) begin
-//         result_p = result_p + $signed(m_i);
-//     end
-// end
-
-// generate
-//   for (genvar i=0; i<NUM_CHUNKS; i++) begin
-//     always_ff @(posedge clk_i) begin
-//       $display("Cycle: %d, State: %s, start_i: %d, d_mul_i: %h",
-//               $time, curr_state.name(), start_i, d_mul_i[i]);
-//       end
-//   end
-// endgenerate
-
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, start_i: %d",
-//             $time, curr_state.name(), start_i);
-// end
-
 generate
   for (genvar i=0; i<NUM_CHUNKS; i++) begin
     always_ff @(posedge clk_i) begin
@@ -251,49 +163,6 @@ generate
   end
 endgenerate
 
-// always_ff @(posedge clk_i) begin
-//     if (rst_ni == 0 || ctrl_update_operands) begin
-//         hi_index <= 0;
-//     end 
-//     else if (ctrl_update_mul_counter) begin
-//         hi_index <= (hi_index == NUM_CHUNKS - 1) ? 0 : hi_index + 1;
-//     end
-// end
-
-// ================================================================
-// always_ff @(posedge clk_i) begin
-//   // on reset, lo is 0, and that will mess up the computation if we use this: rst_ni == 0 || ctrl_clear_regs
-//     if (ctrl_update_operands || start_i) begin
-//         result_p <= lo;
-//     end 
-//     else if (ctrl_update_result) begin
-//         if (is_mersenne) begin
-//             result_p <= result_p + higher_bits[hi_index];
-//         end else begin
-//             result_p <= result_p + (fold_sign_p ? -higher_bits[hi_index] : higher_bits[hi_index]);
-//         end
-//     end
-// end
-// ================================================================
-
-// always_ff @(posedge clk_i) begin
-//     if(!rst_ni || ctrl_update_operands) begin
-//         fold_sign_p <= 1;
-//     end
-//     else if(ctrl_update_fold_sign) begin
-//         fold_sign_p <= ~fold_sign_p;
-//     end
-// end
-
-// always_ff @(posedge clk_i) begin
-//     if(!rst_ni || ctrl_update_operands) begin
-//         num_folds <= 0;
-//     end
-//     else if(ctrl_update_num_folds) begin
-//         num_folds <= num_folds + 1;
-//     end
-// end
-
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     curr_state  <= LOAD;
@@ -301,8 +170,5 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     curr_state  <= next_state;
   end
 end
-
-// logic [63:0] curr_bits;
-// assign curr_bits = higher_bits[hi_index];
 
 endmodule : shiftadd_pipelined
