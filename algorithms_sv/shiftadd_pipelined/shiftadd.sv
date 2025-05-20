@@ -18,10 +18,12 @@ state_t curr_state, next_state;
 
 // logic [1:0]  hi_index;
 logic d_finish;
-logic [DATA_LENGTH-1:0] result_p, result_n;
-logic [DATA_LENGTH-1:0] d_mul_i [NUM_CHUNKS-1:0];
-logic [DATA_LENGTH-1:0] d_accumulator [NUM_CHUNKS-1:0];
-logic [DATA_LENGTH-1:0] d_result [NUM_CHUNKS-1:0];
+logic signed [DATA_LENGTH-1:0] result_p, result_n;
+logic signed [DATA_LENGTH-1:0] d_mul_i [NUM_CHUNKS-1:0];
+logic signed [DATA_LENGTH-1:0] d_accumulator [NUM_CHUNKS-1:0];
+logic signed [DATA_LENGTH-1:0] d_result [NUM_CHUNKS-1:0];
+logic signed [DATA_LENGTH-1:0] d_chunk [NUM_CHUNKS-1:0];
+logic fold_sign [NUM_CHUNKS-1];
 
 shiftreg #(
     .SHIFT(NUM_CHUNKS+1), // +1 buffer delay, +1 mul delay, +1 buffer delay
@@ -32,9 +34,6 @@ shiftreg #(
     .data_o(d_finish)
 );
 // logic [CHUNK_LENGTH-1:0] higher_bits [NUM_CHUNKS-1:0];
-
-logic fold_sign_p, fold_sign_n;
-
 
 logic [DATA_LENGTH-1:0] lo;
 logic [DATA_LENGTH-1:0] mask;
@@ -61,7 +60,6 @@ assign mask = is_fermat ? ((1 << (m_bl_i-1))-1) : m_i;
 // assign hi = d_result_wire[1];
 // assign res = (d_mul_i[0] & ((1 << bitlength) - 1)) + d_result_wire[0];
 
-logic [DATA_LENGTH-1:0] d_chunk [NUM_CHUNKS-1:0];
 
 generate
     for (genvar i = 0; i < NUM_CHUNKS; i++) begin
@@ -72,22 +70,95 @@ generate
     end
 endgenerate
 
+logic signed [DATA_LENGTH-1:0] tmp [NUM_CHUNKS-1:0];
 generate
   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
     always_ff @(posedge clk_i or negedge rst_ni) begin
-        if (i == 0)
+        if (i == 0) begin
           d_accumulator[i] <= d_chunk[i];
-        else
-          d_accumulator[i] <= d_accumulator[i-1] + d_chunk[i];
+        end
+        else begin
+          if(is_mersenne) begin
+            d_accumulator[i] <= d_accumulator[i-1] + d_chunk[i];
+          end
+          else begin
+            d_accumulator[i] <= d_accumulator[i-1] + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
+          end
+        end
       end
   end
 endgenerate
 
+// generate
+//   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
+//     // Stage 1: Compute tmp[i]
+//     always_ff @(posedge clk_i) begin
+//       if (i == 0) begin
+//         d_accumulator[i] <= tmp[i];
+//       end else begin
+//         if(is_mersenne) begin
+//             d_accumulator[i] <= tmp[i];
+//           end
+//           else if (is_fermat && $signed(tmp[i]) < 0) begin
+//             d_accumulator[i] <= tmp[i] + $signed(m_i);
+//           end
+//         // d_accumulator[i] <= d_accumulator[i-1] + (fold_sign[i-1] ? -d_chunk[i] : d_chunk[i]);
+//       end
+//     end
+//   end
+// endgenerate
+
+// generate
+//   for (genvar i = 0; i < NUM_CHUNKS; i++) begin
+//     // Stage 2: Normalize tmp[i] into d_accumulator[i]
+//     always_ff @(posedge clk_i or negedge rst_ni) begin
+//       if (is_fermat && $signed(tmp[i]) < 0) begin
+//         d_accumulator[i] <= tmp[i] + $signed(m_i);
+//       end else begin
+//         d_accumulator[i] <= tmp[i];
+//       end
+//     end
+//   end
+// endgenerate
+
 generate
-    for (genvar i = 0; i < NUM_CHUNKS; i++) begin
-        assign d_result[i] = (d_accumulator[i] >= m_i) ? d_accumulator[i] - m_i : d_accumulator[i];
+  for (genvar i = 0; i < NUM_CHUNKS; i++) begin
+    always_ff @(posedge clk_i) begin
+      if(i==0) begin
+        fold_sign[i] <= 1;
+      end
+      else if (is_fermat) begin
+        fold_sign[i] <= ~fold_sign[i-1];
+      end
+      else begin
+        fold_sign[i] <= fold_sign[i-1];
+      end
     end
+  end
 endgenerate
+
+// generate
+//     for (genvar i = 0; i < NUM_CHUNKS; i++) begin
+//         assign d_result[i] = (d_accumulator[i] >= m_i) ? d_accumulator[i] - m_i : d_accumulator[i];
+//     end
+// endgenerate
+
+
+always_comb begin
+    for (int i = 0; i < NUM_CHUNKS; i++) begin
+      // if(curr_state == FINISH) begin
+        if (d_accumulator[i] >= m_i) begin
+          d_result[i] = d_accumulator[i] - m_i;
+        end
+        else if (d_accumulator[i] < 0) begin
+          d_result[i] = d_accumulator[i] + m_i;
+        end
+      // end
+        else begin
+          d_result[i] = d_accumulator[i];
+        end
+    end
+end
 
 always_comb begin
   next_state = curr_state;
