@@ -2,10 +2,10 @@ module shiftadd_pipelined (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]             x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]             m_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]             m_bl_i,
-  output logic [DATA_LENGTH-1:0]             result_o,
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input
+  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,
+  output logic [DATA_LENGTH-1:0]  result_o,
   output logic                    valid_o    // Result valid flag
 );
 
@@ -16,7 +16,6 @@ localparam CHUNK_LENGTH = 32;
 typedef enum logic[2:0] {LOAD, COMP_BLOCK, REDUCE, ADJUST, FINISH} state_t;
 state_t curr_state, next_state;
 
-// logic [1:0]  hi_index;
 logic d_finish;
 logic signed [DATA_LENGTH-1:0] result_p, result_n;
 logic signed [DATA_LENGTH-1:0] d_mul_i [NUM_CHUNKS-1:0];
@@ -26,7 +25,7 @@ logic signed [DATA_LENGTH-1:0] d_chunk [NUM_CHUNKS-1:0];
 logic fold_sign [NUM_CHUNKS-1];
 
 shiftreg #(
-    .SHIFT(NUM_CHUNKS+1), // +1 buffer delay, +1 mul delay, +1 buffer delay
+    .SHIFT(NUM_CHUNKS+1),
     .DATA(1)
 ) shift_finish (
     .clk_i(clk_i),

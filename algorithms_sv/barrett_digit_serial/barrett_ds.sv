@@ -154,11 +154,6 @@ always_ff @(posedge clk_i) begin
 end
 
 
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, mul_i: %h, result_p: %h, qm_result: %h, start_i: %d, m_finish: %d",
-//             $time, curr_state.name(), mul_i, result_p, qm_result, (curr_state==PRECOMP), m_finish);
-// end
-
 assign valid_o  = (curr_state == FINISH);
 assign result_o = result_n;
 

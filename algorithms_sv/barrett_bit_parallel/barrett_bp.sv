@@ -7,8 +7,6 @@ module barrett_parallel (
 );
 
 logic [127:0] xmu_precomp;
-logic m_finish;
-logic busy_p_o;
 multiplier_top multiplier_precomp(
   .indata_a_i(x_i),           // Input data -> operand a.
   .indata_b_i(mu_i),          // Input data -> operand a.
@@ -18,7 +16,6 @@ multiplier_top multiplier_precomp(
 logic [63:0] q_approx;
 assign q_approx = xmu_precomp >> (2 * m_bl_i);
 
-logic busy_a_o;
 logic [127:0] qm_result;
 multiplier_top multiplier_approx(
   .indata_a_i(q_approx),     // Input data -> operand a.
@@ -26,6 +23,8 @@ multiplier_top multiplier_approx(
   .outdata_r_o(qm_result)
 );
 
-assign result_o = x_i - qm_result;
+logic [63:0] res;
+assign res = x_i - qm_result;
+assign result_o = (res >= m_i) ? (res - m_i) : res;
 
 endmodule : barrett_parallel
