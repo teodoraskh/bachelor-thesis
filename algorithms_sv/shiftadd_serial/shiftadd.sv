@@ -2,14 +2,14 @@ module shiftadd_serialized (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]             x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]             m_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]             m_bl_i,
-  output logic [DATA_LENGTH-1:0]             result_o,
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input
+  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,
+  output logic [DATA_LENGTH-1:0]  result_o,
   output logic                    valid_o    // Result valid flag
 );
 
-localparam NUM_CHUNKS = 3;
+localparam NUM_CHUNKS = 5;
 localparam DATA_LENGTH = 64;
 localparam CHUNK_LENGTH = 32;
 
@@ -21,6 +21,8 @@ logic [DATA_LENGTH-1:0] result_p, result_n;
 logic [DATA_LENGTH-1:0] mul_i;
 logic [DATA_LENGTH-1:0] result;
 logic [CHUNK_LENGTH-1:0] higher_bits [NUM_CHUNKS-1:0];
+logic[22:0] dilithium;
+logic is_dilithium;
 
 logic fold_sign_p, fold_sign_n;
 logic ctrl_update_operands;
@@ -42,7 +44,11 @@ logic [NUM_CHUNKS-1:0]  num_folds;
 logic is_fermat;   
 logic is_mersenne; 
 
-
+// don't really like this as of now but i'll find a better solution
+// ----------------------------------------------------
+assign dilithium = 23'b11111111110000000000001;
+assign is_dilithium= (dilithium == m_i);
+// ----------------------------------------------------
 assign msb_mask    = 1 << (m_bl_i - 1);
 assign inner_mask  = ((1 << (m_bl_i - 1)) - 1) & ~1;
 assign is_fermat   = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
@@ -146,10 +152,10 @@ always_comb begin
     end
 end
 
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, start_i: %d, result_n: %h, result_p: %h, valid_o: %d, num_folds: %d, adj_res: %d",
-//             $time, curr_state.name(), start_i, result_n, result_p, valid_o, num_folds, ctrl_adjust_result);
-// end
+always_ff @(posedge clk_i) begin
+    $display("Cycle: %d, State: %s, start_i: %d, result_n: %h, result_p: %h, valid_o: %d, mul_i: %h, hi: %h",
+            $time, curr_state.name(), start_i, result_n, result_p, valid_o, mul_i, curr_bits);
+end
 
 
 always_ff @(posedge clk_i) begin
@@ -177,9 +183,11 @@ always_ff @(posedge clk_i) begin
     end 
     else if (ctrl_update_result) begin
         if (is_mersenne) begin
-            result_p <= result_p + higher_bits[hi_index];
-        end else begin
-            result_p <= result_p + (fold_sign_p ? -higher_bits[hi_index] : higher_bits[hi_index]);
+          result_p <= result_p + higher_bits[hi_index];
+        end else if(is_fermat) begin
+          result_p <= result_p + (fold_sign_p ? -higher_bits[hi_index] : higher_bits[hi_index]);
+        end else if(is_dilithium) begin
+          result_p <= result_p + scale_chunk_dilithium(higher_bits[hi_index], hi_index);
         end
     end
 end
@@ -210,7 +218,19 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-// logic [63:0] curr_bits;
-// assign curr_bits = higher_bits[hi_index];
+logic [63:0] curr_bits;
+assign curr_bits = higher_bits[hi_index];
+
+function automatic logic [23*2-1:0] scale_chunk_dilithium (
+    input logic [31:0] chunk,
+    input int unsigned i
+);
+    logic [31:0] tmp;
+    tmp = chunk;
+    for (int j = 0; j < i; j++) begin
+        tmp = (tmp << 13) - tmp;
+    end
+    return tmp;
+endfunction
 
 endmodule : shiftadd_serialized
