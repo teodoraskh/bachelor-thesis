@@ -17,13 +17,18 @@ logic state_was_reduce;
 logic recurse_condition_met;
 logic prev_recurse_condition_met;
 logic recurse_pulse;
+logic trigger_start;
+logic start_flag;
 logic start_module;
 
 
 assign recurse_condition_met = (curr_state == REDUCE) && valid_rec && (res >= m_i);
 assign recurse_pulse = recurse_condition_met && !prev_recurse_condition_met;
-assign start_module = entered_reduce || recurse_pulse;
 assign entered_reduce = (curr_state == REDUCE) && !state_was_reduce;
+assign trigger_start = entered_reduce || recurse_pulse;
+// we need start_module high for two cycles since entered_reduce or recurse_pulse
+// one cycle will not suffice and it will get it stuck in load in the next recursion
+assign start_module = trigger_start || start_flag;
 
 // but this: (valid_rec && (res >= m_i) can be true for multiple cycles, and we only want to capture the edge.
 // assign ctrl_recurse = ((curr_state == REDUCE) && !state_was_reduce) || (valid_rec && (res >= m_i));
@@ -33,6 +38,7 @@ assign entered_reduce = (curr_state == REDUCE) && !state_was_reduce;
 //     $display("Cycle: %d, State: %s, start_i: %d, res: %h, recurse?: %d",
 //             $time, curr_state.name(), start_i, res, start_module);
 // end
+
 
 always_comb begin
   next_state = curr_state;
@@ -64,7 +70,7 @@ logic [63:0] res;
 logic [63:0] result;
 logic valid_rec;
 
-shiftadd_serialized shiftadd_module (
+shiftadd_serialized shiftadd_module(
   .clk_i      (clk_i),
   .rst_ni     (rst_ni),
   .start_i    (start_module),
@@ -74,6 +80,13 @@ shiftadd_serialized shiftadd_module (
   .result_o   (res),
   .valid_o    (valid_rec)
 );
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni)
+    start_flag <= 1'b0;
+  else
+    start_flag <= trigger_start;
+end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni)

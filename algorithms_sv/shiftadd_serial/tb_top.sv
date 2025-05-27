@@ -53,7 +53,8 @@ module shiftadd_tb_top;
     // indata_m_i = 64'h3A32E4C4C7A8C21B;
     // indata_m_i = 64'h7FFFFFFF; // Mersenne
     // indata_m_i = 32'h80000001; // Fermat
-    indata_m_i = 64'h7FE001; //Dilithium
+    // indata_m_i = 64'h7FE001; //Dilithium
+    indata_m_i = 64'hD01; //Kyber
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
 

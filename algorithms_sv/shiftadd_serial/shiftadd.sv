@@ -9,7 +9,11 @@ module shiftadd_serialized (
   output logic                    valid_o    // Result valid flag
 );
 
-localparam NUM_CHUNKS = 5;
+// -----------------------------------------------------------------------
+// it's 3 for 64-bit inputs, needs to be adjusted for higher-bit inputs
+// it's ceil(input_bitlength / mod_bitlength)
+localparam NUM_CHUNKS = 6;
+// -----------------------------------------------------------------------
 localparam DATA_LENGTH = 64;
 localparam CHUNK_LENGTH = 32;
 
@@ -21,8 +25,6 @@ logic [DATA_LENGTH-1:0] result_p, result_n;
 logic [DATA_LENGTH-1:0] mul_i;
 logic [DATA_LENGTH-1:0] result;
 logic [CHUNK_LENGTH-1:0] higher_bits [NUM_CHUNKS-1:0];
-logic[22:0] dilithium;
-logic is_dilithium;
 
 logic fold_sign_p, fold_sign_n;
 logic ctrl_update_operands;
@@ -41,11 +43,17 @@ logic [DATA_LENGTH-1:0] bitlength;
 logic [DATA_LENGTH-1:0] msb_mask;    
 logic [DATA_LENGTH-1:0] inner_mask;
 logic [NUM_CHUNKS-1:0]  num_folds;
+logic[22:0] dilithium;
+logic[11:0] kyber;
+logic is_dilithium;
+logic is_kyber;
 logic is_fermat;   
 logic is_mersenne; 
 
 // don't really like this as of now but i'll find a better solution
 // ----------------------------------------------------
+assign kyber     = 64'hD01;
+assign is_kyber  = (kyber == m_i);
 assign dilithium = 23'b11111111110000000000001;
 assign is_dilithium= (dilithium == m_i);
 // ----------------------------------------------------
@@ -54,13 +62,13 @@ assign inner_mask  = ((1 << (m_bl_i - 1)) - 1) & ~1;
 assign is_fermat   = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
 assign is_mersenne = ((m_i ^ ((1 << m_bl_i) - 1)) == 0);
 assign bitlength   = is_fermat ? (m_bl_i - 1) : m_bl_i;
-assign mask = is_fermat ? ((1 << (m_bl_i-1))-1) : m_i;
-assign lo   = (mul_i & ((1 << bitlength) - 1));
+assign mask        = is_mersenne ? m_i : ((1 << bitlength)-1);
+assign lo          = (x_i & ((1 << bitlength) - 1));
 
 
 generate
     for (genvar i = 0; i < NUM_CHUNKS; i++) begin
-        assign higher_bits[i] = ((mul_i >> ((i+1) * bitlength)) & mask);
+        assign higher_bits[i] = ((x_i >> ((i+1) * bitlength)) & mask);
     end
 endgenerate
 
@@ -141,7 +149,8 @@ always_ff @(posedge clk_i) begin
     else begin
       result_n <= result_p;
     end
-  end else begin
+  end 
+  else begin
     result_n <= 64'b0;
   end
 end
@@ -149,21 +158,6 @@ end
 always_comb begin
     if (is_fermat && $signed(result_p) < 0) begin
         result_p = result_p + $signed(m_i);
-    end
-end
-
-always_ff @(posedge clk_i) begin
-    $display("Cycle: %d, State: %s, start_i: %d, result_n: %h, result_p: %h, valid_o: %d, mul_i: %h, hi: %h",
-            $time, curr_state.name(), start_i, result_n, result_p, valid_o, mul_i, curr_bits);
-end
-
-
-always_ff @(posedge clk_i) begin
-    if (rst_ni == 0) begin
-        mul_i <= 0;
-    end 
-    else if (ctrl_update_operands) begin
-        mul_i <= x_i;
     end
 end
 
@@ -187,7 +181,10 @@ always_ff @(posedge clk_i) begin
         end else if(is_fermat) begin
           result_p <= result_p + (fold_sign_p ? -higher_bits[hi_index] : higher_bits[hi_index]);
         end else if(is_dilithium) begin
-          result_p <= result_p + scale_chunk_dilithium(higher_bits[hi_index], hi_index);
+          result_p <= result_p + scale_chunk_dilithium(higher_bits[hi_index], hi_index + 1);
+        end
+        else if(is_kyber) begin
+          result_p <= result_p + scale_chunk_kyber(higher_bits[hi_index], hi_index + 1);
         end
     end
 end
@@ -225,12 +222,26 @@ function automatic logic [23*2-1:0] scale_chunk_dilithium (
     input logic [31:0] chunk,
     input int unsigned i
 );
-    logic [31:0] tmp;
+    logic [63:0] tmp;
     tmp = chunk;
     for (int j = 0; j < i; j++) begin
         tmp = (tmp << 13) - tmp;
     end
     return tmp;
 endfunction
+
+function automatic logic [23*2-1:0] scale_chunk_kyber (
+    input logic [31:0] chunk,
+    input int unsigned i
+);
+    logic [63:0] tmp;
+    tmp = chunk;
+    for (int j = 0; j < i; j++) begin
+        tmp = (tmp << 9) + (tmp << 8) - tmp;
+    end
+    return tmp;
+endfunction
+
+
 
 endmodule : shiftadd_serialized
