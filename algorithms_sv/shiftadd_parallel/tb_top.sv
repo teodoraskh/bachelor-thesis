@@ -1,7 +1,7 @@
 
 // import multiplier_pkg::*;
 
-module shiftadd_tb;
+module shiftadd_tb_top;
 
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
@@ -10,30 +10,30 @@ module shiftadd_tb;
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i;      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;      // Input data -> operand b.
+    logic [64-1:0]              indata_m_bl_i;   // Input data -> operand b.
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
 
     logic [64-1:0]              reference_o;
 
     // Instantiate module
-    shiftadd_serialized uut (
-        .clk_i                  (clk_i),
-        .rst_ni                 (rst_ni),
-        .start_i                (start_i),    
-        .x_i                    (indata_x_i),
-        .m_i                    (indata_m_i),
-        .m_bl_i                 (indata_m_bl_i),
-        .result_o               (outdata_r_o),
-        .valid_o                (finish_o)    
-    );
+    shiftadd_bp_top uut (
+      .clk_i                  (clk_i),
+      .rst_ni                 (rst_ni),
+      .start_i                (start_i),    
+      .x_i                    (indata_x_i),
+      .m_i                    (indata_m_i),
+      .m_bl_i                 (indata_m_bl_i),
+      .result_o               (outdata_r_o),
+      .valid_o                (finish_o)    
+  );
 
     // Clock generation
     initial forever #5 clk_i = ~clk_i;
 
     // Dumpfile 
     initial begin
-        $dumpfile("shiftadd_tb.vcd");
-        $dumpvars(0, shiftadd_tb);
+        $dumpfile("shiftadd_tb_top.vcd");
+        $dumpvars(0, shiftadd_tb_top);
     end
 
     integer inp_file;
@@ -54,6 +54,7 @@ module shiftadd_tb;
     // indata_m_i = 64'h7FFFFFFF; // Mersenne
     // indata_m_i = 32'h80000001; // Fermat
     indata_m_i = 64'h7FE001; //Dilithium
+    // indata_m_i = 64'hD01; //Kyber
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
 
@@ -107,4 +108,4 @@ module shiftadd_tb;
     $finish;
 end
 
-endmodule : shiftadd_tb 
+endmodule : shiftadd_tb_top 

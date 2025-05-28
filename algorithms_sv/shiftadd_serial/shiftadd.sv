@@ -48,17 +48,17 @@ logic [DATA_LENGTH-1:0] msb_mask;
 logic [DATA_LENGTH-1:0] inner_mask;
 logic [NUM_CHUNKS-1:0]  num_folds;
 
-assign is_kyber    = (m_i == ((1 << 12) - (1 << 9) - (1 << 8) + 1));
-assign is_dilithium= (m_i == ((1 << 23) - (1 << 13) + 1));
+assign is_kyber     = (m_i == ((1 << 12) - (1 << 9) - (1 << 8) + 1));
+assign is_dilithium = (m_i == ((1 << 23) - (1 << 13) + 1));
 
 
-assign msb_mask    = 1 << (m_bl_i - 1);
-assign inner_mask  = ((1 << (m_bl_i - 1)) - 1) & ~1;
-assign is_fermat   = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
-assign is_mersenne = ((m_i ^ ((1 << m_bl_i) - 1)) == 0);
-assign bitlength   = is_fermat ? (m_bl_i - 1) : m_bl_i;
-assign mask        = is_mersenne ? m_i : ((1 << bitlength)-1);
-assign lo          = (x_i & ((1 << bitlength) - 1));
+assign msb_mask     = 1 << (m_bl_i - 1);
+assign inner_mask   = ((1 << (m_bl_i - 1)) - 1) & ~1;
+assign is_fermat    = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
+assign is_mersenne  = ((m_i ^ ((1 << m_bl_i) - 1)) == 0);
+assign bitlength    = is_fermat ? (m_bl_i - 1) : m_bl_i;
+assign mask         = is_mersenne ? m_i : ((1 << bitlength)-1);
+assign lo           = (x_i & ((1 << bitlength) - 1));
 
 
 generate
@@ -214,10 +214,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-// logic [63:0] curr_bits;
-// assign curr_bits = higher_bits[hi_index];
-
-// Computes the modular equivalent of `chunk` into the range [0, 8380417)
+// Computes scaled value of `chunk` by (2^13 - 1)^i
 function automatic logic [23*2-1:0] scale_chunk_dilithium (
     input logic [31:0] chunk,
     input int unsigned i
@@ -230,7 +227,7 @@ function automatic logic [23*2-1:0] scale_chunk_dilithium (
     return tmp;
 endfunction
 
-// Computes the modular equivalent of `chunk` into the range [0, 3329)
+// Computes scaled value of `chunk` by (2^9 + 2^8 - 1)^i
 function automatic logic [63:0] scale_chunk_kyber (
     input logic [31:0] chunk,
     input int unsigned i
@@ -243,8 +240,6 @@ function automatic logic [63:0] scale_chunk_kyber (
     return tmp;
 endfunction
 
-// logic [63:0] ky;
-// assign ky = scale_chunk_kyber(higher_bits[3], 4);
 
 // always_ff @(posedge clk_i) begin
 //     $display("Cycle: %d, State: %s, start_i: %d, res_p: %h",
