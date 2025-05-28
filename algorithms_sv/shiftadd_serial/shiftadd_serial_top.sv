@@ -30,16 +30,6 @@ assign trigger_start = entered_reduce || recurse_pulse;
 // one cycle will not suffice and it will get it stuck in load in the next recursion
 assign start_module = trigger_start || start_flag;
 
-// but this: (valid_rec && (res >= m_i) can be true for multiple cycles, and we only want to capture the edge.
-// assign ctrl_recurse = ((curr_state == REDUCE) && !state_was_reduce) || (valid_rec && (res >= m_i));
-
-
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, start_i: %d, res: %h, recurse?: %d",
-//             $time, curr_state.name(), start_i, res, start_module);
-// end
-
-
 always_comb begin
   next_state = curr_state;
   case (curr_state)

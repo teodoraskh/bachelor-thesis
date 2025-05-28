@@ -4,8 +4,8 @@ module shiftadd_serialized (
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input
   input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]  m_bl_i,
-  output logic [DATA_LENGTH-1:0]  result_o,
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,    // Modulus bitlength
+  output logic [DATA_LENGTH-1:0]  result_o,  // Result
   output logic                    valid_o    // Result valid flag
 );
 
@@ -35,6 +35,10 @@ logic ctrl_update_mul_counter;
 logic ctrl_adjust_result;
 logic ctrl_clear_regs;
 
+logic is_dilithium;
+logic is_kyber;
+logic is_fermat;   
+logic is_mersenne; 
 
 logic [DATA_LENGTH-1:0] lo;
 logic [DATA_LENGTH-1:0] mask;
@@ -43,20 +47,11 @@ logic [DATA_LENGTH-1:0] bitlength;
 logic [DATA_LENGTH-1:0] msb_mask;    
 logic [DATA_LENGTH-1:0] inner_mask;
 logic [NUM_CHUNKS-1:0]  num_folds;
-logic[22:0] dilithium;
-logic[11:0] kyber;
-logic is_dilithium;
-logic is_kyber;
-logic is_fermat;   
-logic is_mersenne; 
 
-// don't really like this as of now but i'll find a better solution
-// ----------------------------------------------------
-assign kyber     = 64'hD01;
-assign is_kyber  = (kyber == m_i);
-assign dilithium = 23'b11111111110000000000001;
-assign is_dilithium= (dilithium == m_i);
-// ----------------------------------------------------
+assign is_kyber    = (m_i == ((1 << 12) - (1 << 9) - (1 << 8) + 1));
+assign is_dilithium= (m_i == ((1 << 23) - (1 << 13) + 1));
+
+
 assign msb_mask    = 1 << (m_bl_i - 1);
 assign inner_mask  = ((1 << (m_bl_i - 1)) - 1) & ~1;
 assign is_fermat   = ((m_i & msb_mask)==msb_mask) && ((m_i & 1)==1) && ((m_i & inner_mask) == 0);
@@ -176,16 +171,20 @@ always_ff @(posedge clk_i) begin
         result_p <= lo;
     end 
     else if (ctrl_update_result) begin
-        if (is_mersenne) begin
+      case(1'b1)
+        is_mersenne: begin
           result_p <= result_p + higher_bits[hi_index];
-        end else if(is_fermat) begin
+        end
+        is_fermat: begin
           result_p <= result_p + (fold_sign_p ? -higher_bits[hi_index] : higher_bits[hi_index]);
-        end else if(is_dilithium) begin
+        end
+        is_dilithium: begin
           result_p <= result_p + scale_chunk_dilithium(higher_bits[hi_index], hi_index + 1);
         end
-        else if(is_kyber) begin
+        is_kyber: begin
           result_p <= result_p + scale_chunk_kyber(higher_bits[hi_index], hi_index + 1);
         end
+      endcase
     end
 end
 
@@ -215,9 +214,10 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-logic [63:0] curr_bits;
-assign curr_bits = higher_bits[hi_index];
+// logic [63:0] curr_bits;
+// assign curr_bits = higher_bits[hi_index];
 
+// Computes the modular equivalent of `chunk` into the range [0, 8380417)
 function automatic logic [23*2-1:0] scale_chunk_dilithium (
     input logic [31:0] chunk,
     input int unsigned i
@@ -230,6 +230,7 @@ function automatic logic [23*2-1:0] scale_chunk_dilithium (
     return tmp;
 endfunction
 
+// Computes the modular equivalent of `chunk` into the range [0, 3329)
 function automatic logic [63:0] scale_chunk_kyber (
     input logic [31:0] chunk,
     input int unsigned i
@@ -242,8 +243,8 @@ function automatic logic [63:0] scale_chunk_kyber (
     return tmp;
 endfunction
 
-logic [63:0] ky;
-assign ky = scale_chunk_kyber(higher_bits[3], 4);
+// logic [63:0] ky;
+// assign ky = scale_chunk_kyber(higher_bits[3], 4);
 
 // always_ff @(posedge clk_i) begin
 //     $display("Cycle: %d, State: %s, start_i: %d, res_p: %h",
@@ -251,56 +252,3 @@ assign ky = scale_chunk_kyber(higher_bits[3], 4);
 // end
 
 endmodule : shiftadd_serialized
-
-
-// 1111 1010 0000 0010 1111 1011 0101 0001 1011 1111 0101 0010 1111 0100 0101 1001 -> fa02fb51bf52f459
-// lower 12 bits:
-// 0100 0101 1001
-// = 0100 0101 1001 + (0101 0010 1111 << 9 + 0101 0010 1111 << 8 - 0101 0010 1111) + ((0001 1011 1111 << 9 + 0001 1011 1111 << 8 - 0001 1011 1111) << 9) + ((0001 1011 1111 << 9 + 0001 1011 1111 << 8 - 0001 1011 1111) << 8) - (0001 1011 1111 << 9 + 0001 1011 1111 << 8 - 0001 1011 1111)
-
-
-// FBC13E9+((2F0F4B«9+2F0F4B«8−2F0F4B)«9+ (2F0F4B«9+2F0F4B«8−2F0F4B)«8−(2F0F4B«9+2F0F4B«8−2F0F4B))
-// = 1A67F326134
-// do this 4 times
-// 1: (a02 << 8 + a02 << 9 - a02) = 1DFBFE
-// 2: (1DFBFE << 9 + 1DFBFE << 8 - 1DFBFE)
-// 3: (59D5FE02 << 9 + 59D5FE02 << 8 - 59D5FE02)
-// 4: 10D282407FE << 9 + 10D282407FE << 8 - 10D282407FE
-//  = 3266B43F3F202
-// = 1A67F326134 + 3266B43F3F202
-// = 32811C3265336
-// ---------------------------
-// 32811C3265336
-// = 336 + (265 << 9 + 265 << 8 - 265)
-// = 72FD1
-// = 72FD1 + ...
-//  = (1C3 << 9 + 1C3 << 8 - 1C3) = 5473D << 9 + 5473D << 8 - 5473D = FD06FC3
-// = 72FD1 + FD06FC3 = FD79F94
-// = FD79F94 + ...
-//  = 281 << 9 + 281 << 8 - 281 = 7807F << 9 + 7807F << 8 - 7807F = 1679FC81 << 9 + 1679FC81 << 8 - 1679FC81
-// = FD79F94 + 43577B867F = 4367532613
-// = 4367532613 + ...
-//  = 3 << 9 + 3 << 8 - 3 = 8FD << 9 + 8FD << 8 - 8FD = ... =  F1BCA1DC03
-// 4367532613 + F1BCA1DC03 = 13523F50216
-// 13523F50216
-// = 216 + (F50 << 9 + F50 << 8 - F50) = 2DE2C6
-// 2DE2C6 + ...
-// = 523 + << 9 + 523 << 8 - 523 = F63DD ... = 2E1C3323
-// = 2DE2C6 + 2E1C3323 = 2E4A15E9
-// = 2E4A15E9 + ...
-//  = 13 << 9 + 13 << 8 - 13 = ...= 1FEFFAAED
-// = 2E4A15E9 + 1FEFFAAED
-// = 22D49C0D6 > D01
-// = 0D6 + (49C << 9 + 49C << 8 - 49C) + ((22D << 9 + 22D << 8 - 22D) << 9) + ((22D << 9 + 22D << 8 - 22D) << 8) - (22D << 9 + 22D << 8 - 22D)
-// = 0D6 + (49C << 9 + 49C << 8 - 49C) + (684D3 << 9) + (684D3 << 8) - 684D3
-// = 1395C467
-// = 467 + (95C << 9 + 95C << 8 - 95C) + ((13 << 9 + 13 << 8 - 13) << 9 + (13 << 9 + 13 << 8 - 13) << 8 - (13 << 9 + 13 << 8 - 13))
-// = 467 + 1C0AA4 + AA8E13
-// = C69D1E
-//  = D1E + C69 << 9 + C69 << 8 + C69 = D1E + 254769
-// = 255487
-//  = 487 + 6FCAB
-// = 70132
-// = 132 + 70 << 9 + 70 << 8 - 70
-// = 150C2
-// = 0C2 + 
