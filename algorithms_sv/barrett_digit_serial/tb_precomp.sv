@@ -52,14 +52,16 @@ module barrett_ds_p_tb;
     rst_ni    = 0;
     start_i   = 0;
 
-    indata_m_i  = 64'h3A32E4C4C7A8C21B;
-    indata_mu_i = 64'h466123E72A6BDD53;
+    // indata_m_i  = 64'h3A32E4C4C7A8C21B;
+    // indata_mu_i = 64'h466123E72A6BDD53;
+    indata_m_i  = 64'h7FE001; //Dilithium
+    indata_mu_i = 64'h802007;
     // indata_m_i = 64'h7FFFFFFF; // Mersenne
     // indata_m_i = 32'h80000001; // Fermat
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
 
-    inp_file = $fopen("input.txt", "r");
+    inp_file = $fopen("input_ez.txt", "r");
     if (inp_file == 0) begin
         $display("ERROR: Failed to open file.");
         $finish;

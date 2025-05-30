@@ -121,4 +121,9 @@ end
 assign result_o = result;
 assign valid_o  = (curr_state == FINISH);
 
+always_ff @(posedge clk_i) begin
+    $display("Cycle: %d, State: %s, start_i: %d",
+            $time, curr_state.name(), start_module);
+end
+
 endmodule : shiftadd_serial_top

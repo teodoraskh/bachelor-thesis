@@ -54,9 +54,10 @@ module shiftadd_tb_top;
     // indata_m_i = 64'h7FFFFFFF; // Mersenne
     // indata_m_i = 32'h80000001; // Fermat
     // indata_m_i = 64'h7FE001; //Dilithium
-    indata_m_i = 64'hD01; //Kyber
+    // indata_m_i = 64'hD01; //Kyber
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
+    indata_m_i = 64'h10001;
 
     inp_file = $fopen("input_ez.txt", "r");
     if (inp_file == 0) begin

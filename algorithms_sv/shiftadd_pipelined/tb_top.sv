@@ -1,7 +1,7 @@
 
 // import multiplier_pkg::*;
 
-module barrett_precomp_tb;
+module shiftadd_tb_top;
 
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
@@ -10,22 +10,22 @@ module barrett_precomp_tb;
     logic                       finish_o;        // Module finish.
     logic [64-1:0]              indata_x_i   [49-1:0];      // Input data -> operand a.
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;   // Modulus Bitlength
-    logic [64-1:0]              indata_mu_i;     // Input data -> modular inverse.
+    logic [64-1:0]              indata_m_bl_i;
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
+
     logic [64-1:0]              reference_o [49-1:0];
 
     // Instantiate module
-    barrett_pipelined uut (
-      .clk_i                  (clk_i),              // Rising edge active clk.
-      .rst_ni                 (rst_ni),             // Active low reset.
-      .start_i                (start_i),            // Start signal.
-      .x_i                    (indata_x),           // Module busy. 
-      .m_i                    (indata_m_i),         // Module finish.
+    // FIX THIS VALUE HERE!!
+    shiftadd_pipelined_top uut (
+      .clk_i                  (clk_i),
+      .rst_ni                 (rst_ni),
+      .start_i                (start_i),    
+      .x_i                    (indata_x),
+      .m_i                    (indata_m_i),
       .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
-      .mu_i                   (indata_mu_i),        // Input data -> operand a.
       .result_o               (outdata_r_o),
-      .valid_o                (finish_o)
+      .valid_o                (finish_o)    
     );
 
     // Clock generation
@@ -33,15 +33,15 @@ module barrett_precomp_tb;
 
     // Dumpfile 
     initial begin
-      $dumpfile("barrett_precomp_tb.vcd");
-      $dumpvars(0, barrett_precomp_tb);
+        $dumpfile("shiftadd_tb_top.vcd");
+        $dumpvars(0, shiftadd_tb_top);
     end
 
     integer NUM_DATA;
     initial begin
       integer fp;
 
-      fp = $fopen("input.txt", "r");
+      fp = $fopen("input_ez.txt", "r");
       if (!fp) begin
         $fatal(1, "Cannot open input file.");
       end
@@ -57,26 +57,25 @@ module barrett_precomp_tb;
       $display("Loaded %d inputs from file.", NUM_DATA);
     end
 
+    integer inp_file;
     logic [63:0] indata_x;
-    assign indata_m_bl_i = $clog2(indata_m_i);
 
+    assign indata_m_bl_i = $clog2(indata_m_i);
     // Stimulus generation
     initial begin
       $display("\n=======================================");
-      $display("[%04t] > Start barrett precomp test", $time);
+      $display("[%04t] > Start shiftadd test", $time);
       $display("=======================================\n");
 
       // Initialize inputs
       clk_i = 0;
-      rst_ni = 1;
+      rst_ni = 0;
       start_i = 0;
-      // indata_m_i    = 64'h3A32E4C4C7A8C21B;
-      // indata_mu_i   = 64'h466123E72A6BDD53;
-      // indata_m_i  = 64'h7FFFFFFF; // Mersenne
-      // indata_mu_i = 64'h80000001; // Fermat (mu will be 2^31+1)
-      indata_m_i  = 64'h7FE001; //Dilithium
-      indata_mu_i = 64'h802007;
-      #20;
+      // indata_m_i = 64'h7FFFFFFF; // Mersenne
+      // indata_m_i = 64'h80000001; // Fermat
+      indata_m_i = 64'h7FE001; //Dilithium
+
+      #5;
       // $display("[%04t] > Set reset signal", $time);
       rst_ni = 1;
       for(integer i = 0; i < NUM_DATA; i ++) begin
@@ -95,7 +94,6 @@ module barrett_precomp_tb;
       #10;
       // $display("[%04t] > Reset start signal", $time);
       start_i = 0;
-      // $display("");
     end
 
     initial begin
@@ -108,11 +106,10 @@ module barrett_precomp_tb;
       for(integer i = 0; i < NUM_DATA; i ++) begin
         $display("[%04t] > OUT data : %h", $time, outdata_r_o);
         $display("[%04t] > REF data : %h", $time, reference_o[i]);
-        if (outdata_r_o == reference_o[i]) begin
+        if (outdata_r_o == reference_o[i])
             $display("[%04t] > Data is VALID", $time);
-        end else begin
+        else
             $display("[%04t] > Data is INVALID", $time);
-        end
         $display("");
 
         @(posedge clk_i);
@@ -120,7 +117,7 @@ module barrett_precomp_tb;
       end
 
       $display("\n=======================================");
-      $display("[%04t] > Finish barrett precomp test", $time);
+      $display("[%04t] > Finish shiftadd test", $time);
       $display("=======================================\n");
 
       // Finish simulation
@@ -128,4 +125,4 @@ module barrett_precomp_tb;
       $finish;
     end
 
-endmodule : barrett_precomp_tb 
+endmodule : shiftadd_tb_top 
