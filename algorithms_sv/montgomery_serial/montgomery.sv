@@ -3,39 +3,35 @@ module montgomery_serialized (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [63:0]             x_i,       // Input: multiplication result from NTT, already in Montgomery form
-  input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  input  logic [63:0]             m_bl_i,
-  output logic [63:0]             result_o,
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input: multiplication result from NTT, already in Montgomery form
+  input  logic [DATA_LENGTH-1:0]  y_i,       
+  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus (e.g., 32-bit)
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,
+  output logic [DATA_LENGTH-1:0]  result_o,
   output logic                    valid_o    // Result valid flag
 );
-// 1. Get xR^2 mod N as input, reduce twice to get x mod N
-//    Maybe use  multiplier to compute xR^2?
+
+localparam DATA_LENGTH = 64;
 typedef enum logic[2:0] {LOAD, REDUCE, FINISH} state_t;
 state_t curr_state, next_state;
-logic [63:0] accumulator_p, accumulator_n;
-logic [8:0] idx_p, idx_n;
-logic d_finish;
+logic [DATA_LENGTH-1:0] S;
+logic [8:0] idx;
 
-always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
-        accumulator_p <= x_i;
-        curr_state    <= LOAD;
-        idx_p         <= 0;
-    end 
-    else begin
-        curr_state    <= next_state;
-        accumulator_p <= accumulator_n;
-        idx_p         <= idx_n;
-    end
-end
-
-// logic lsb = accumulator_p[0];
+logic ctrl_reset_operands;
+logic ctrl_update_result;
+logic ctrl_update_x_counter;
+logic ctrl_start_new;
 
 always_comb begin
-  next_state    = curr_state; // default is to stay in current state
-  accumulator_n = accumulator_p;
-  idx_n         = idx_p;
+  ctrl_reset_operands    = (curr_state == LOAD);
+  ctrl_update_x_counter  = (curr_state == REDUCE);
+  ctrl_update_result     = (curr_state == REDUCE);
+  ctrl_start_new         = ((next_state != FINISH) && (curr_state == FINISH));
+end
+
+
+always_comb begin
+  next_state = curr_state;
   case (curr_state)
       LOAD : begin
           if (start_i) begin
@@ -43,22 +39,14 @@ always_comb begin
           end
       end
       REDUCE : begin
-        // WARNING: $bits(m_i) will always return 64/128/whatever!
-        // find another solution to check the bit width with precision!
-        if(idx_p == m_bl_i) begin
+        if(idx == m_bl_i - 1) begin
           next_state = FINISH;
         end else begin
-          if(accumulator_p[0] == 1) begin
-            accumulator_n = (accumulator_p + m_i) >> 1;
-          end else begin
-            accumulator_n = accumulator_p >> 1;
-          end
-            idx_n = idx_p + 1;
             next_state = REDUCE;
         end
       end
       FINISH : begin
-          next_state = FINISH;
+          next_state = LOAD;
       end
       default : begin
           next_state = LOAD;
@@ -66,12 +54,55 @@ always_comb begin
   endcase
 end
 
-assign valid_o = (curr_state == FINISH);
-assign result_o = (curr_state == FINISH) ? accumulator_p : 64'b0;
 
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, m_i: %h, idx_p: %d, acc_p: %h, rst_ni: %b, bits_mi: %d",
-//             $time, curr_state.name(), x_i, m_i, idx_p, accumulator_p, rst_ni, $clog2(m_i + 1));
-// end
+always_ff @(posedge clk_i) begin
+    if (rst_ni == 0 || ctrl_reset_operands) begin
+        idx <= 0;
+    end 
+    else if (ctrl_update_x_counter) begin
+        idx <= idx + 1;
+    end
+end
+
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni || ctrl_reset_operands)
+    S <= 0;
+  else if(ctrl_update_result)
+    S <= montgomery_step(S, x_i[idx], y_i, m_i);
+end
+
+always_ff @(posedge clk_i) begin
+  if (!rst_ni || ctrl_start_new)
+    curr_state <= LOAD;
+  else
+    curr_state <= next_state;
+end
+
+logic [DATA_LENGTH-1:0] mask;
+assign mask = {DATA_LENGTH{S >= m_i}};
+
+assign valid_o  = (curr_state == FINISH);
+// avoid branching
+assign result_o = (S & ~mask) | ((S - m_i) & mask);
+// assign result_o = S;
+
+
+function automatic [DATA_LENGTH-1:0] montgomery_step(
+    input logic [DATA_LENGTH-1:0] S,
+    input logic x_b,
+    input logic [DATA_LENGTH-1:0] y,
+    input logic [DATA_LENGTH-1:0] modulus
+  );
+    logic  [DATA_LENGTH-1:0] temp1, temp2;
+
+    // avoids branching
+    temp1 = S + (y & {DATA_LENGTH{x_b}});
+    temp2 = temp1 + (modulus & {DATA_LENGTH{temp1[0]}});
+
+    return temp2 >> 1;
+endfunction
+
+
 
 endmodule:montgomery_serialized
