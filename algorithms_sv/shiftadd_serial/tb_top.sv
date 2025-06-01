@@ -12,10 +12,8 @@ module shiftadd_tb_top;
     logic [64-1:0]              indata_m_i;      // Input data -> operand b.
     logic [64-1:0]              indata_m_bl_i;   // Input data -> operand b.
     logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
-
     logic [64-1:0]              reference_o;
 
-    // Instantiate module
     shiftadd_serial_top uut (
       .clk_i                  (clk_i),
       .rst_ni                 (rst_ni),
@@ -27,10 +25,8 @@ module shiftadd_tb_top;
       .valid_o                (finish_o)    
   );
 
-    // Clock generation
     initial forever #5 clk_i = ~clk_i;
 
-    // Dumpfile 
     initial begin
         $dumpfile("shiftadd_tb_top.vcd");
         $dumpvars(0, shiftadd_tb_top);
@@ -40,8 +36,7 @@ module shiftadd_tb_top;
 
     assign indata_m_bl_i = $clog2(indata_m_i);
 
-    // Stimulus generation
-    initial begin
+initial begin
     $display("\n=======================================");
     $display("[%04t] > Start shiftadd test", $time);
     $display("=======================================\n");
@@ -53,13 +48,13 @@ module shiftadd_tb_top;
     // indata_m_i = 64'h3A32E4C4C7A8C21B;
     // indata_m_i = 64'h7FFFFFFF; // Mersenne
     // indata_m_i = 32'h80000001; // Fermat
-    // indata_m_i = 64'h7FE001; //Dilithium
+    indata_m_i = 64'h7FE001; //Dilithium
     // indata_m_i = 64'hD01; //Kyber
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
-    indata_m_i = 64'h10001;
+    // indata_m_i = 64'h10001;
 
-    inp_file = $fopen("input_ez.txt", "r");
+    inp_file = $fopen("input.txt", "r");
     if (inp_file == 0) begin
         $display("ERROR: Failed to open file.");
         $finish;
@@ -79,16 +74,14 @@ module shiftadd_tb_top;
         if (indata_x_i != 0) begin
             reference_o = indata_x_i % indata_m_i;
 
-            // pulse start_i for 1 cycle at rising clock edge
             @(posedge clk_i);
             start_i = 1;
             @(posedge clk_i);
             start_i = 0;
 
-            // wait for finish_o or valid_o to go high
             wait (finish_o == 1);
 
-            @(posedge clk_i);  // Optional extra wait cycle
+            @(posedge clk_i);
 
             $display("[%04t] > Received data : %h", $time, outdata_r_o);
             $display("[%04t] > Reference data: %h", $time, reference_o);
@@ -104,7 +97,6 @@ module shiftadd_tb_top;
     $display("[%04t] > Finish shiftadd serialized test", $time);
     $display("=======================================\n");
 
-    // Finish simulation
     #100;
     $finish;
 end

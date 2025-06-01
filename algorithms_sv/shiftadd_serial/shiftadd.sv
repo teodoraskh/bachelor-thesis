@@ -33,7 +33,7 @@ logic ctrl_update_fold_sign;
 logic ctrl_update_num_folds;
 logic ctrl_update_mul_counter;
 logic ctrl_adjust_result;
-logic ctrl_clear_regs;
+logic ctrl_start_new;
 
 logic is_dilithium;
 logic is_kyber;
@@ -75,7 +75,7 @@ always_comb begin
   ctrl_update_num_folds   = (curr_state == REDUCE);
   ctrl_update_result      = (curr_state == REDUCE);
   ctrl_adjust_result      = (curr_state == ADJUST);
-  ctrl_clear_regs         = ((next_state != FINISH) && (curr_state == FINISH));
+  ctrl_start_new          = ((next_state != FINISH) && (curr_state == FINISH));
 end
 
 
@@ -207,7 +207,7 @@ always_ff @(posedge clk_i) begin
 end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni || ctrl_clear_regs) begin
+  if (!rst_ni || ctrl_start_new) begin
     curr_state  <= LOAD;
   end else begin
     curr_state  <= next_state;
