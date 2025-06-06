@@ -1,15 +1,15 @@
-module kyber_tb;
+module dilithium_tb;
 
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [24-1:0]              indata_x_i   [58:0];      // Input data -> operand a.
-    logic [12-1:0]              indata_m_i;     
-    logic [24-1:0]              outdata_r_o;     // Output data -> result a*b.
+    logic [46-1:0]              indata_x_i   [1:0];      // Input data -> operand a.
+    logic [23-1:0]              indata_m_i;     
+    logic [46-1:0]              outdata_r_o;     // Output data -> result a*b.
 
-    logic [24-1:0]              reference_o [58:0];
+    logic [46-1:0]              reference_o [1:0];
 
     // Instantiate module
    reduction_top uut(
@@ -27,8 +27,8 @@ module kyber_tb;
 
     // Dumpfile 
     initial begin
-        $dumpfile("kyber_tb.vcd");
-        $dumpvars(0, kyber_tb);
+        $dumpfile("dilithium_tb.vcd");
+        $dumpvars(0, dilithium_tb);
     end
 
     integer NUM_DATA;
@@ -52,13 +52,13 @@ module kyber_tb;
     end
 
     integer inp_file;
-    logic [24-1:0] indata_x;
+    logic [46-1:0] indata_x;
 
     assign indata_m_bl_i = $clog2(indata_m_i);
     // Stimulus generation
     initial begin
       $display("\n=======================================");
-      $display("[%04t] > Start kyber test", $time);
+      $display("[%04t] > Start dilithium test", $time);
       $display("=======================================\n");
 
       // Initialize inputs
@@ -66,7 +66,7 @@ module kyber_tb;
       rst_ni = 1;
       start_i = 0;
 
-      indata_m_i = 24'hD01;
+      indata_m_i  = 64'h7FE001; //Dilithium
 
       #20;
       // $display("[%04t] > Set reset signal", $time);
@@ -85,7 +85,6 @@ module kyber_tb;
       end
 
       #10;
-      // $display("[%04t] > Reset start signal", $time);
       start_i = 0;
     end
 
@@ -110,7 +109,7 @@ module kyber_tb;
       end
 
       $display("\n=======================================");
-      $display("[%04t] > Finish kyber test", $time);
+      $display("[%04t] > Finish dilithium test", $time);
       $display("=======================================\n");
 
       // Finish simulation
@@ -118,4 +117,4 @@ module kyber_tb;
       $finish;
     end
 
-endmodule : kyber_tb 
+endmodule : dilithium_tb 
