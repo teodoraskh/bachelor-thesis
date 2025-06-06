@@ -8,7 +8,7 @@ module reduction_top (
   output logic                    valid_o    // Result valid flag
 );
 
-localparam NUM_RED = 4;
+localparam NUM_RED = 3;
 
 logic [24-1:0] x_delayed [NUM_RED-1:0];
 logic [24-1:0] x_delayed1;
@@ -22,19 +22,16 @@ logic finish_delayed [NUM_RED-1:0];
 assign x_delayed1 =  x_delayed[0];
 assign x_delayed2 =  x_delayed[1];
 assign x_delayed3 =  x_delayed[2];
-assign x_delayed4 =  x_delayed[3];
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     x_delayed[0] <= '0;
     x_delayed[1] <= '0;
     x_delayed[2] <= '0;
-    x_delayed[3] <= '0;
   end else begin
     x_delayed[0] <= x_i;
     x_delayed[1] <= res_delayed[0];
     x_delayed[2] <= res_delayed[1];
-    x_delayed[3] <= res_delayed[2];
   end
 end
 
@@ -43,12 +40,10 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     finish_delayed[0] <= 0;
     finish_delayed[1] <= 0;
     finish_delayed[2] <= 0;
-    finish_delayed[3] <= 0;
   end else begin
     finish_delayed[0] <= start_i;
     finish_delayed[1] <= finish_delayed[0];
     finish_delayed[2] <= finish_delayed[1];
-    finish_delayed[3] <= finish_delayed[2];
   end
 end
 
@@ -64,7 +59,7 @@ generate
 endgenerate
 
 
-assign result_o = res_delayed[NUM_RED-1];
+assign result_o = res_delayed[NUM_RED-1] >= m_i ? res_delayed[NUM_RED-1] - m_i : res_delayed[NUM_RED-1];
 assign valid_o = finish_delayed[NUM_RED-1];
 
 
