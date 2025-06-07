@@ -1,3 +1,4 @@
+  
 module dilithium_tb;
 
     logic                       clk_i;           // Rising edge active clk.
@@ -5,11 +6,11 @@ module dilithium_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [46-1:0]              indata_x_i   [1:0];      // Input data -> operand a.
+    logic [46-1:0]              indata_x_i   [3:0];      // Input data -> operand a.
     logic [23-1:0]              indata_m_i;     
     logic [46-1:0]              outdata_r_o;     // Output data -> result a*b.
 
-    logic [46-1:0]              reference_o [1:0];
+    logic [46-1:0]              reference_o [3:0];
 
     // Instantiate module
    reduction_top uut(

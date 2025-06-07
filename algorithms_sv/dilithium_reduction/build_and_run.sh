@@ -2,7 +2,6 @@
 
 iverilog -g2012 -I. -o dilithium_tb.vvp \
   reduction.sv \
-  reduction_top.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
 
 vvp dilithium_tb.vvp || { echo "Simulation failed"; exit 1; }

@@ -72,10 +72,10 @@ module barrett_precomp_tb;
       start_i = 0;
       // indata_m_i    = 64'h3A32E4C4C7A8C21B;
       // indata_mu_i   = 64'h466123E72A6BDD53;
-      // indata_m_i  = 64'h7FFFFFFF; // Mersenne
-      // indata_mu_i = 64'h80000001; // Fermat (mu will be 2^31+1)
-      indata_m_i  = 64'h7FE001; //Dilithium
-      indata_mu_i = 64'h802007;
+      indata_m_i  = 64'h7FFFFFFF; // Mersenne
+      indata_mu_i = 64'h80000001; // Fermat (mu will be 2^31+1)
+      // indata_m_i  = 64'h7FE001; //Dilithium
+      // indata_mu_i = 64'h802007;
       #20;
       // $display("[%04t] > Set reset signal", $time);
       rst_ni = 1;

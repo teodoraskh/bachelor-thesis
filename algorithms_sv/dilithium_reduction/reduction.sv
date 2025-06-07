@@ -1,12 +1,32 @@
-module dilithium_reduction (        // Rising edge active clk.
-    input  logic [46-1:0]     x_i,     // Input data -> operand a.
-    input  logic [23-1:0]     m_i,     // Input data -> modulus.
-    output logic [46-1:0]     result_o     // Output data -> result a*b.
+module reduction_top (
+  input  logic                    clk_i,
+  input  logic                    rst_ni,
+  input  logic                    start_i,
+  input  logic [46-1:0]           x_i,       // Input (e.g., 64-bit)
+  input  logic [23-1:0]           m_i,       // Modulus (e.g., 32-bit)
+  output logic [46-1:0]           result_o,
+  output logic                    valid_o    // Result valid flag
 );
+
+localparam NUM_RED = 1;
+logic finish_delayed;
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if(!rst_ni) begin
+    finish_delayed <= 0;
+  end else begin
+    finish_delayed <= start_i;
+  end
+end
+
 logic [46-1:0] tmp;
+logic [46-1:0] res;
 assign tmp = x_i[22:0] + 
                   (({1'b0, x_i[32:23]} + {2'b0, x_i[42:33]} + {2'b0, x_i[45:43]}) << 13) +
                   ~({2'b0, x_i[45:23]} + {2'b0, x_i[45:33]} + {2'b0, x_i[45:43]}) + 1;
-assign result_o = (tmp > m_i) ? tmp - m_i : tmp;
 
-endmodule : dilithium_reduction
+assign result_o = (tmp > m_i) ? tmp - m_i : tmp;
+assign valid_o = finish_delayed;
+
+
+endmodule : reduction_top
