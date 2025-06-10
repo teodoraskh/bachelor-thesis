@@ -61,7 +61,10 @@ module barrett_ds_p_tb;
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
 
-    inp_file = $fopen("input_ez.txt", "r");
+    indata_m_i = 64'hD01;
+    indata_mu_i = 64'h13AF;
+
+    inp_file = $fopen("kyber_input.txt", "r");
     if (inp_file == 0) begin
         $display("ERROR: Failed to open file.");
         $finish;

@@ -5,11 +5,11 @@ module kyber_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [24-1:0]              indata_x_i   [58:0];      // Input data -> operand a.
+    logic [24-1:0]              indata_x_i   [63:0];      // Input data -> operand a.
     logic [12-1:0]              indata_m_i;     
     logic [24-1:0]              outdata_r_o;     // Output data -> result a*b.
 
-    logic [24-1:0]              reference_o [58:0];
+    logic [24-1:0]              reference_o [63:0];
 
     // Instantiate module
    reduction_top uut(

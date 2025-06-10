@@ -46,14 +46,16 @@ module montgomery_bp_tb;
   rst_ni    = 0;
   start_i   = 0;
 
-  indata_minv_i = 64'hD988C5E7CA39B7ED;
-  indata_m_i    = 64'h3A32E4C4C7A8C21B;
+  // indata_minv_i = 64'hD988C5E7CA39B7ED;
+  // indata_m_i    = 64'h3A32E4C4C7A8C21B;
   // indata_m_i = 64'h7FFFFFFF; // Mersenne
   // indata_m_i = 32'h80000001; // Fermat
   // indata_m_i = 32'h21;
   // indata_m_i = 32'h2001;
+  indata_m_i = 12'hD01;
+  indata_minv_i = 24'hFCFF;
 
-  inp_file = $fopen("input.txt", "r");
+  inp_file = $fopen("kyber_input.txt", "r");
   if (inp_file == 0) begin
       $display("ERROR: Failed to open file.");
       $finish;

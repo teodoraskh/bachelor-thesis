@@ -2,11 +2,11 @@ module barrett_ds (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
-  input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  input  logic [63:0]             m_bl_i,      // Precomputed μ
-  input  logic [63:0]             mu_i,      // Precomputed μ
-  output logic [127:0]            result_o,
+  input  logic [63:0]             x_i,       // Input
+  input  logic [63:0]             m_i,       // Modulus
+  input  logic [63:0]             m_bl_i,    // Modulus bitlength
+  input  logic [63:0]             mu_i,      // Precomputed mu
+  output logic [127:0]            result_o,  // Result
   output logic                    valid_o    // Result valid flag
 );
 
@@ -18,6 +18,8 @@ logic [63:0] q_m;
 logic [63:0] tmp;
 logic [63:0] mul_i;
 logic [63:0] result_n, result_p;
+
+
 logic ctrl_update_operands;
 logic ctrl_update_result;
 logic ctrl_adjust_result;
@@ -25,13 +27,19 @@ logic ctrl_clear_regs;
 logic ctrl_update_res_with_xmu;
 logic ctrl_update_res_with_qm;
 
+// =======================================================================
+//  It is serialized, in the sense that it uses the 16x16-bit 
+//  serial multiplier. This seemed like the least error-prone approach 
+//  given the chained multiplications + the shift.
+// =======================================================================
+
+
 always_comb begin
   ctrl_update_operands    = (curr_state == LOAD);
   ctrl_update_res_with_xmu= (curr_state == PRECOMP) && (m_finish == 1);
   ctrl_update_result      = (curr_state == FINISH);
   ctrl_update_res_with_qm = (curr_state == APPROX) && (a_finish == 1);
   ctrl_adjust_result      = (curr_state == REDUCE);
-  // ctrl_clear_regs         = ((next_state != FINISH) && (curr_state == FINISH));
 end
 
 always_ff @(posedge clk_i) begin
@@ -84,6 +92,7 @@ always_comb begin
     endcase
 end
 
+
 logic [127:0] xmu_precomp;
 logic m_finish;
 logic busy_p_o;
@@ -125,7 +134,6 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 always_ff @(posedge clk_i) begin
-    // Update result_p based on control signals (priority order matters)
     if (ctrl_update_operands || start_i) begin
         result_p <= 0;
     end 

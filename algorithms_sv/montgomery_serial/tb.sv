@@ -69,6 +69,7 @@ module montgomery_tb;
 
         while (!$feof(inp_file)) begin
 
+          // Get A, B and B in Montgomery form
           $fscanf(inp_file, "%h %h %h", indata_x_i, indata_y_i, indata_y_mont_i);
 
           if(indata_x_i != 0) begin

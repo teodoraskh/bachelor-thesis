@@ -51,8 +51,10 @@ module barrett_bp_tb;
     // indata_m_i = 32'h80000001; // Fermat
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
+    indata_m_i = 64'hD01;
+    indata_mu_i = 64'h13AF;
 
-    inp_file = $fopen("input.txt", "r");
+    inp_file = $fopen("kyber_input.txt", "r");
     if (inp_file == 0) begin
         $display("ERROR: Failed to open file.");
         $finish;

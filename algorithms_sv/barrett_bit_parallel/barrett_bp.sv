@@ -1,8 +1,8 @@
 module barrett_parallel (
-  input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
-  input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  input  logic [63:0]             m_bl_i,    // Precomputed μ
-  input  logic [63:0]             mu_i,      // Precomputed μ
+  input  logic [63:0]             x_i,       // Input
+  input  logic [63:0]             m_i,       // Modulus
+  input  logic [63:0]             m_bl_i,    // Modulus bitlength
+  input  logic [63:0]             mu_i,      // Mu
   output logic [63:0]             result_o
 );
 
