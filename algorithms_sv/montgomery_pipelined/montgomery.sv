@@ -23,7 +23,7 @@ logic d_finish;
 logic [63:0] x_delayed;
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 1),
+    .SHIFT((NUM_MULS + 2) * 2 + 2),
     .DATA(1) 
 ) shift_finish (
     .clk_i(clk_i),
@@ -89,6 +89,10 @@ end
 
 logic busy_s_o;
 logic [127:0] lsb_scaled;
+logic [127:0] lsb;
+assign lsb = x_i & ((1 << m_bl_i) - 1);
+
+// lsb_scaled = (T mod R) * Q'
 multiplier_top multiplier_precomp(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
@@ -101,7 +105,8 @@ multiplier_top multiplier_precomp(
 );
 
 logic [63:0] m;
-assign m = lsb_scaled & ((1 << m_bl_i) - 1);
+// lsb_scaled mod R
+assign m = lsb_scaled & ((1 << m_bl_i) - 1); // 
 
 logic busy_m_o;
 logic [127:0] m_rescaled;
@@ -119,11 +124,11 @@ multiplier_top multiplier_approx(
 logic [63:0] result_next;
 logic [63:0] tmp;
 
-always_comb begin
-  result_next = result_o;
-  if (m_finish) begin
-    tmp = (x_delayed + m_rescaled) >> m_bl_i;
-    result_next = (tmp < m_i) ? tmp : tmp - m_i;
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    result_next <= 64'b0;
+  end else if(m_finish)begin
+    result_next <= (x_delayed + m_rescaled) >> m_bl_i;
   end
 end
 
@@ -131,7 +136,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 64'b0;
   end else begin
-    result_o <= result_next;
+    result_o <= (result_next < m_i) ? result_next : result_next - m_i;
   end
 end
 

@@ -43,7 +43,7 @@ module montgomery_tb;
     initial begin
       integer fp;
 
-      fp = $fopen("dilithium_input.txt", "r");
+      fp = $fopen("kyber_input.txt", "r");
       if (!fp) begin
         $fatal(1, "Cannot open input file.");
       end
@@ -77,11 +77,13 @@ module montgomery_tb;
       // indata_minv_i = 64'hD988C5E7CA39B7ED;
       // indata_m_i    = 64'h3A32E4C4C7A8C21B;
 
-      // indata_m_i = 12'hD01;    // Kyber
+      indata_m_i = 12'hD01;    // Kyber
+      indata_minv_i = -24'h301;
       // indata_minv_i = 24'hFCFF;
 
-      indata_m_i    = 23'h7FE001;    // Dilithium
-      indata_minv_i = 23'hDFFF;
+      // indata_m_i    = 23'h7FE001;    // Dilithium
+      // indata_minv_i = -23'h2001;   // -(2^13 + 1)      
+      // indata_minv_i = 23'hDFFF;    // twos(-(2^13 + 1))
 
       #20;
       // $display("[%04t] > Set reset signal", $time);

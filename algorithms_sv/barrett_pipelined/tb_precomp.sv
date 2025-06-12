@@ -76,8 +76,12 @@ module barrett_precomp_tb;
       // indata_mu_i = 64'h80000001; // Fermat (mu will be 2^31+1)
       // indata_m_i  = 64'h7FE001; //Dilithium
       // indata_mu_i = 64'h802007;
-      indata_m_i = 64'hD01;
-      indata_mu_i = 64'h13AF;
+      // indata_m_i = 64'hD01;  //Kyber
+      // indata_mu_i = 64'h13AF;
+
+      indata_m_i = 64'h7FE001;  //DIlithium
+      // indata_mu_i = 64'h7FFFFF;   // 2^23 - 1 ok wow?
+      indata_mu_i = 64'h802007;
       #20;
       // $display("[%04t] > Set reset signal", $time);
       rst_ni = 1;

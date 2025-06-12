@@ -51,10 +51,14 @@ module barrett_bp_tb;
     // indata_m_i = 32'h80000001; // Fermat
     // indata_m_i = 32'h21;
     // indata_m_i = 32'h2001;
-    indata_m_i = 64'hD01;
-    indata_mu_i = 64'h13AF;
+    // indata_m_i = 64'hD01;
+    // indata_mu_i = 64'h13AF;
 
-    inp_file = $fopen("kyber_input.txt", "r");
+    indata_m_i = 64'h7FE001;  //DIlithium
+    // indata_mu_i = 64'h7FFFFF;   // 2^23 - 1 ok wow?
+    indata_mu_i = 64'h802007;
+
+    inp_file = $fopen("dilithium_input.txt", "r");
     if (inp_file == 0) begin
         $display("ERROR: Failed to open file.");
         $finish;

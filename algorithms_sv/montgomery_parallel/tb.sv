@@ -52,10 +52,17 @@ module montgomery_bp_tb;
   // indata_m_i = 32'h80000001; // Fermat
   // indata_m_i = 32'h21;
   // indata_m_i = 32'h2001;
-  indata_m_i = 12'hD01;
-  indata_minv_i = 24'hFCFF;
 
-  inp_file = $fopen("kyber_input.txt", "r");
+
+    // indata_m_i = 12'hD01;    // Kyber
+    // indata_minv_i = -24'h301;
+    // indata_minv_i = 24'hFCFF;
+
+    indata_m_i    = 23'h7FE001;    // Dilithium
+    indata_minv_i = -23'h2001;    // -(2^13 + 1)      
+    // indata_minv_i = 23'hDFFF;  // twos(-(2^13 + 1))
+
+  inp_file = $fopen("dilithium_input.txt", "r");
   if (inp_file == 0) begin
       $display("ERROR: Failed to open file.");
       $finish;
