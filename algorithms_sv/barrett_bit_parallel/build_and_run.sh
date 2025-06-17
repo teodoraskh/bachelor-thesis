@@ -1,6 +1,8 @@
-iverilog -E ../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
+iverilog -E ../utils/multiplier_pkg.sv \
+            ../utils/params_pkg.sv  || { echo "Package syntax error"; exit 1; }
 
 iverilog -g2012 -I.. -o barrett_bp_tb.vvp \
+  ../utils/params_pkg.sv \
   ../utils/multiplier_pkg.sv \
   ../utils/multiplier_16x16_parallel.sv \
   ../utils/multiplier_parallel.sv \

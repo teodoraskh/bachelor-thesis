@@ -66,7 +66,7 @@ module barrett_ds_p_tb;
 
     indata_m_i = 64'h7FE001;  //DIlithium
     // indata_mu_i = 64'h7FFFFF;   //
-      indata_mu_i = 64'h802007;
+    indata_mu_i = 64'h802007;
 
     inp_file = $fopen("dilithium_input.txt", "r");
     if (inp_file == 0) begin
