@@ -1,15 +1,13 @@
-// TODO: now this will work just fine for 64bit values
-//       might need to be used as a standalone module for 64x64
 import multiplier_pkg::*;
 module montgomery_pipelined (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
-  input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  input  logic [63:0]             m_bl_i,
-  input  logic [63:0]             minv_i,       // Input (e.g., 64-bit)
-  output logic [63:0]             result_o,
+  input  logic [DATA_LENGTH-1:0]             x_i,       // Input (e.g., 64-bit)
+  input  logic [DATA_LENGTH-1:0]             m_i,       // Modulus (e.g., 32-bit)
+  input  logic [DATA_LENGTH-1:0]             m_bl_i,
+  input  logic [DATA_LENGTH-1:0]             minv_i,       // Input (e.g., 64-bit)
+  output logic [DATA_LENGTH-1:0]             result_o,
   output logic                    valid_o    // Result valid flag
 );
 
@@ -20,7 +18,7 @@ state_t curr_state, next_state;
 // 1, start_mult2, 
 logic s_finish, m_finish;
 logic d_finish;
-logic [63:0] x_delayed;
+logic [DATA_LENGTH-1:0] x_delayed;
 
 shiftreg #(
     .SHIFT((NUM_MULS + 2) * 2 + 2),
@@ -77,19 +75,9 @@ always_comb begin
     endcase
 end
 
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, busy_s_o: %b, s_finish: %b, m_finish: %b, d_finish: %b",
-//             $time, curr_state.name(), x_i, x_delayed, busy_s_o, s_finish, m_finish, d_finish);
-// end
-
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, out: %h, valid: %b",
-//             $time, curr_state.name(), x_i, x_delayed, result_o, valid_o);
-// end
-
 logic busy_s_o;
-logic [127:0] lsb_scaled;
-logic [127:0] lsb;
+logic [2 * DATA_LENGTH-1:0] lsb_scaled;
+logic [2 * DATA_LENGTH-1:0] lsb;
 assign lsb = x_i & ((1 << m_bl_i) - 1);
 
 // lsb_scaled = (T mod R) * Q'
@@ -104,7 +92,7 @@ multiplier_top multiplier_precomp(
   .outdata_r_o(lsb_scaled)
 );
 
-logic [63:0] m;
+logic [DATA_LENGTH-1:0] m;
 // lsb_scaled mod R
 assign m = lsb_scaled & ((1 << m_bl_i) - 1); // 
 
@@ -121,8 +109,8 @@ multiplier_top multiplier_approx(
   .outdata_r_o(m_rescaled)
 );
 
-logic [63:0] result_next;
-logic [63:0] tmp;
+logic [DATA_LENGTH-1:0] result_next;
+logic [DATA_LENGTH-1:0] tmp;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin

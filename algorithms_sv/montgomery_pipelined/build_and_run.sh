@@ -1,12 +1,12 @@
 # 1. First compile JUST the package to check for syntax errors
-iverilog -E multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
+iverilog -E ../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
 
 # 2. Compile all dependencies IN ORDER (packages first!)
 iverilog -g2012 -I. -o montgomery.vvp \
-  multiplier_pkg.sv \
-  multiplier_16x16.sv \
-  multiplier_top.sv \
-  shiftreg.sv \
+  ../utils/multiplier_pkg.sv \
+  ../utils/multiplier_16x16.sv \
+  ../utils/multiplier_top_pipelined.sv \
+  ../utils/shiftreg.sv \
   montgomery.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
 

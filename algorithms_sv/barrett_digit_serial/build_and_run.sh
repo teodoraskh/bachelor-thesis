@@ -1,9 +1,9 @@
-iverilog -E multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
+iverilog -E ../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
 
 iverilog -g2012 -I. -o barrett_ds_p_tb.vvp \
-  multiplier_pkg.sv \
-  multiplier_16x16.sv \
-  multiplier_top.sv \
+  ../utils/multiplier_pkg.sv \
+  ../utils/multiplier_16x16.sv \
+  ../utils/multiplier_top.sv \
   barrett_ds.sv \
   tb_precomp.sv || { echo "Compilation failed"; exit 1; }
 

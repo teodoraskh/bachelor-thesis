@@ -1,5 +1,5 @@
 
-// import multipler_pkg::*;
+import multiplier_pkg::*;
 
 module barrett_tb;
 
@@ -8,25 +8,24 @@ module barrett_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic                       ready_o;         // First multiplication is valid
-    logic [63:0]     indata_x_i;      // Input data -> operand a.
-    logic [63:0]     indata_m_i;      // Input data -> operand b.
-    logic [63:0]     indata_mu_i;      // Input data -> operand b.
-    logic [63:0]     outdata_r_o;     // Output data -> result a*b.
-
-    localparam NUM_DATA = 16;
-    logic signed [127:0]   reference_o [NUM_DATA-1:0];
+    logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input data -> operand a.
+    logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_m_bl_i;   // Modulus Bitlength
+    logic [DATA_LENGTH-1:0]     indata_mu_i;     // Input data -> modular inverse.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
+    logic [DATA_LENGTH-1:0]     reference_o [DATA_LENGTH-1:0];
 
     // Instantiate module
     barrett_pipelined uut (
-        .clk_i                  (clk_i),           // Rising edge active clk.
-        .rst_ni                 (rst_ni),          // Active low reset.
-        .start_i                (start_i),         // Start signal.
-        .x_i                    (indata_x_i),          // Module busy. 
-        .m_i                    (indata_m_i),        // Module finish.
-        .mu_i                   (indata_mu_i),      // Input data -> operand a.
-        .result_o               (outdata_r_o),
-        .valid_o                (finish_o)
+      .clk_i                  (clk_i),              // Rising edge active clk.
+      .rst_ni                 (rst_ni),             // Active low reset.
+      .start_i                (start_i),            // Start signal.
+      .x_i                    (indata_x),           // Module busy. 
+      .m_i                    (indata_m_i),         // Module finish.
+      .m_bl_i                 (indata_m_bl_i),      //Modulus bitlength
+      .mu_i                   (indata_mu_i),        // Input data -> operand a.
+      .result_o               (outdata_r_o),
+      .valid_o                (finish_o)
     );
 
     // Clock generation
@@ -34,77 +33,105 @@ module barrett_tb;
 
     // Dumpfile 
     initial begin
-        $dumpfile("barrett.vcd");
-        $dumpvars(0, barrett_tb);
+      $dumpfile("barrett_tb.vcd");
+      $dumpvars(0, barrett_tb);
     end
 
-      logic [127:0] tmp;
+    integer NUM_DATA;
+    initial begin
+      integer fp;
+
+      fp = $fopen("dilithium_input.txt", "r");
+      if (!fp) begin
+        $fatal(1, "Cannot open input file.");
+      end
+
+      NUM_DATA = 0;
+      while (!$feof(fp)) begin
+        $fscanf(fp, "%h", indata_x_i[NUM_DATA]);
+        NUM_DATA++;
+      end
+
+      $fclose(fp);
+
+      $display("Loaded %d inputs from file.", NUM_DATA);
+    end
+
+    logic [DATA_LENGTH-1:0] indata_x;
+    assign indata_m_bl_i = $clog2(indata_m_i);
+
     // Stimulus generation
     initial begin
+      $display("\n=======================================");
+      $display("[%04t] > Start barrett precomp test", $time);
+      $display("=======================================\n");
 
-        $display("\n=======================================");
-        $display("[%04t] > Start barrett test", $time);
-        $display("=======================================\n");
+      // Initialize inputs
+      clk_i = 0;
+      rst_ni = 1;
+      start_i = 0;
+      // indata_m_i    = 64'h3A32E4C4C7A8C21B;
+      // indata_mu_i   = 64'h466123E72A6BDD53;
+      // indata_m_i  = 64'h7FFFFFFF; // Mersenne
+      // indata_mu_i = 64'h80000001; // Fermat (mu will be 2^31+1)
+      // indata_m_i  = 64'h7FE001; //Dilithium
+      // indata_mu_i = 64'h802007;
+      // indata_m_i = 64'hD01;  //Kyber
+      // indata_mu_i = 64'h13AF;
 
-        // Initialize inputs
-        clk_i = 0;
-        rst_ni = 1;
-        start_i = 0;
-        indata_x_i = 0;
-        indata_m_i = 64'h0000_0000_9215_3525;
-        indata_mu_i = 64'h2CDE_B2B0;
-
-        #20;
-        $display("[%04t] > Set reset signal", $time);
-        rst_ni = 1;
-        for (integer i=0; i<NUM_DATA; i++) begin
-            #10;
-            $display("[%04t] > Set start signal", $time);
-            indata_x_i = $urandom() % (indata_m_i * 4);  // x < 4m (Barrett requirement)
-            reference_o[i] = indata_x_i % indata_m_i;
-            start_i = 1;
-            $display("[%04t] > Set A  : %h", $time, indata_x_i);
-            $display("[%04t] > Set B  : %h", $time, indata_m_i);
-            $display("[%04t] > Set REF: %h", $time, reference_o[i]);
-
-        end
-
+      indata_m_i = 64'h7FE001;  //DIlithium
+      // indata_mu_i = 64'h7FFFFF;   // 2^23 - 1 ok wow?
+      indata_mu_i = 64'h802007;
+      #20;
+      // $display("[%04t] > Set reset signal", $time);
+      rst_ni = 1;
+      for(integer i = 0; i < NUM_DATA; i ++) begin
         #10;
-        $display("[%04t] > Reset start signal", $time);
-        start_i = 0;
-        // $display("");
+        // $display("[%04t] > Set start signal", $time);
+        // Wait a few cycles
+        indata_x = indata_x_i[i];
+        reference_o[i] = indata_x % indata_m_i;
+        start_i = 1;
+
+        $display("[%04t] > Set indata_x_i: %h", $time, indata_x);
+        $display("[%04t] > Set REF: %h", $time, reference_o[i]);
+        $display("");
+      end
+
+      #10;
+      // $display("[%04t] > Reset start signal", $time);
+      start_i = 0;
+      // $display("");
     end
 
     initial begin
-        #10;
-        $display("[%04t] < Wait for finish signal", $time);
-        @(posedge finish_o)
-        $display("[%04t] > Received finish signal", $time);
-        // $display("");
-        #1;
-
-        for (integer i=0; i<NUM_DATA; i++) begin
-            $display("[%04t] > OUT data: %h", $time, outdata_r_o);
-            $display("[%04t] > REF data: %h", $time, reference_o[i]);
-            if (outdata_r_o == reference_o[i]) begin
-                $display("[%04t] > Data is VALID", $time);
-            end
-            else begin
-                $display("[%04t] > Data is INVALID", $time);
-            end
-
-            @(posedge clk_i);
-            #1;
+      #10;
+      $display("[%04t] < Wait for finish signal", $time);
+      @(posedge finish_o)
+      $display("[%04t] > Received finish signal", $time);
+      // $display("");
+      #1;
+      for(integer i = 0; i < NUM_DATA; i ++) begin
+        $display("[%04t] > OUT data : %h", $time, outdata_r_o);
+        $display("[%04t] > REF data : %h", $time, reference_o[i]);
+        if (outdata_r_o == reference_o[i]) begin
+            $display("[%04t] > Data is VALID", $time);
+        end else begin
+            $display("[%04t] > Data is INVALID", $time);
         end
+        $display("");
 
-        $display("\n=======================================");
-        $display("[%04t] > Finish barrett test", $time);
-        $display("=======================================\n");
+        @(posedge clk_i);
+        #1;
+      end
 
-        // Finish simulation
-        #100;
-        $finish;
+      $display("\n=======================================");
+      $display("[%04t] > Finish barrett precomp test", $time);
+      $display("=======================================\n");
 
+      // Finish simulation
+      #100;
+      $finish;
     end
 
 endmodule : barrett_tb 

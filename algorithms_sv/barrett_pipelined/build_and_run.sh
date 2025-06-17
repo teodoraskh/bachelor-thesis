@@ -1,40 +1,18 @@
-# iverilog -E multiplier_pkg.sv 
-# iverilog -E multiplier_16x16.sv multiplier_top.sv
+iverilog -E ../utils/multiplier_pkg.sv \ || { echo "Package syntax error"; exit 1; }
 
-# iverilog -g2012 -o barrett.vvp tb.sv barrett.sv shiftreg.sv
-# vvp barrett.vvp
-
-# gtkwave -f barrett.vcd # new session -> empty 
-# # gtkwave -f barrett.vcd -3 # restore previous gtk session
-
-# rm *.vvp
-# rm *.vcd
-
-
-#!/bin/bash
-
-# 1. First compile JUST the package to check for syntax errors
-iverilog -E multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
-
-# 2. Compile all dependencies IN ORDER (packages first!)
-iverilog -g2012 -I. -o barrett_precomp_tb.vvp \
-  multiplier_pkg.sv \
-  multiplier_16x16.sv \
-  multiplier_top.sv \
-  shiftreg.sv \
+iverilog -g2012 -I. -o barrett_tb.vvp \
+  ../utils/multiplier_pkg.sv \
+  ../utils/multiplier_16x16.sv \
+  ../utils/multiplier_top_pipelined.sv \
+  ../utils/shiftreg.sv \
   barrett.sv \
-  tb_precomp.sv || { echo "Compilation failed"; exit 1; }
+  tb.sv || { echo "Compilation failed"; exit 1; }
 
-# 3. Run simulation (only if compilation succeeded)
-vvp barrett_precomp_tb.vvp || { echo "Simulation failed"; exit 1; }
+vvp barrett_tb.vvp || { echo "Simulation failed"; exit 1; }
 
-# 4. Open waveforms (only if simulation succeeded)
-if [ -f barrett_precomp_tb.vcd ]; then
-  gtkwave barrett_precomp_tb.vcd &
+if [ -f barrett_tb.vcd ]; then
+  gtkwave barrett_tb.vcd &
 else
   echo "No waveform file generated"
   exit 1
 fi
-
-# Cleanup (optional)
-# rm -f *.vvp *.vcd

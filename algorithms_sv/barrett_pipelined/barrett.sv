@@ -1,26 +1,22 @@
-// TODO: now this will work just fine for 64bit values
-//       might need to be used as a standalone module for 64x64
 import multiplier_pkg::*;
 module barrett_pipelined (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [63:0]             x_i,       // Input (e.g., 64-bit)
-  input  logic [63:0]             m_i,       // Modulus (e.g., 32-bit)
-  input  logic [63:0]             m_bl_i,
-  input  logic [63:0]             mu_i,      // Precomputed μ
-  output logic [63:0]             result_o,
-  output logic                    valid_o    // Result valid flag
+  input  logic [DATA_LENGTH-1:0]  x_i,
+  input  logic [DATA_LENGTH-1:0]  m_i,
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,
+  input  logic [DATA_LENGTH-1:0]  mu_i,
+  output logic [DATA_LENGTH-1:0]  result_o,
+  output logic                    valid_o
 );
 
 typedef enum logic[3:0] {IDLE, LOAD, APPROX, REDUCE, FINISH} state_t;
 
 state_t curr_state, next_state;
-
-// 1, start_mult2, 
 logic m_finish, a_finish, start_gated;
 logic d_finish;
-logic [63:0] x_delayed;
+logic [DATA_LENGTH-1:0] x_delayed;
 
 shiftreg #(
     .SHIFT((NUM_MULS + 2) * 2), 
@@ -41,7 +37,7 @@ shiftreg #(
 );
 
 logic early_bypass;
-logic [63:0] bypass_value;
+logic [DATA_LENGTH-1:0] bypass_value;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -87,15 +83,9 @@ always_comb begin
               end
           end
         end
-        
         LOAD: begin
             if (busy_p_o) next_state = APPROX;
         end
-        // LOAD : begin
-        //     if (start_i) begin
-        //         next_state = APPROX;
-        //     end
-        // end
         APPROX: begin
           if(a_finish) begin // a_finish can indicate that the approximation has completed
             next_state = REDUCE;
@@ -115,39 +105,29 @@ always_comb begin
     endcase
 end
 
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, busy_p_o: %b, m_finish: %b, a_finish: %b, d_finish: %b",
-//             $time, curr_state.name(), x_i, x_delayed, busy_p_o, m_finish, a_finish, d_finish);
-// end
-
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, x_i: %h, x_delayed: %h, out: %h, valid: %b",
-//             $time, curr_state.name(), x_i, x_delayed, result_o, valid_o);
-// end
-
 logic busy_p_o;
-logic [127:0] xmu_precomp;
-logic [63:0] safe_x_i;
-logic [63:0] safe_mu_i;
+logic [2 * DATA_LENGTH-1:0] xmu_precomp;
+logic [DATA_LENGTH-1:0] safe_x_i;
+logic [DATA_LENGTH-1:0] safe_mu_i;
 
 assign safe_x_i = start_gated ? x_i : 64'b0;
 assign safe_mu_i = start_gated ? mu_i : 64'b0;
 multiplier_top multiplier_precomp(
-  .clk_i(clk_i),              // Rising edge active clk.
-  .rst_ni(rst_ni),            // Active low reset.
-  .start_i(start_gated),          // Start signal.
-  .busy_o(busy_p_o),          // Module busy.
-  .finish_o(m_finish),        // Module finish.
-  .indata_a_i(safe_x_i),           // Input data -> operand a.
-  .indata_b_i(safe_mu_i),           // Input data -> operand a.
+  .clk_i(clk_i),    
+  .rst_ni(rst_ni),
+  .start_i(start_gated),
+  .busy_o(busy_p_o),
+  .finish_o(m_finish),
+  .indata_a_i(safe_x_i),        
+  .indata_b_i(safe_mu_i),
   .outdata_r_o(xmu_precomp)
 );
 
-logic [63:0] q_approx;
+logic [DATA_LENGTH-1:0] q_approx;
 assign q_approx = xmu_precomp >> (2 * m_bl_i);
 
 logic busy_a_o;
-logic [127:0] qm_result;
+logic [2 * DATA_LENGTH-1:0] qm_result;
 multiplier_top multiplier_approx(
   .clk_i(clk_i),             // Rising edge active clk.
   .rst_ni(rst_ni),           // Active low reset.
@@ -159,11 +139,11 @@ multiplier_top multiplier_approx(
   .outdata_r_o(qm_result)
 );
 
-logic [63:0] result_next;
-logic [63:0] tmp;
+logic [DATA_LENGTH-1:0] result_next;
+logic [DATA_LENGTH-1:0] tmp;
 
 always_comb begin
-    tmp = x_delayed - qm_result[63:0];
+    tmp = x_delayed - qm_result[DATA_LENGTH-1:0];
     result_next = (tmp < m_i) ? tmp : tmp - m_i;
 end
 

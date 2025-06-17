@@ -1,23 +1,24 @@
+import multiplier_pkg::*;
 module barrett_ds (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [63:0]             x_i,       // Input
-  input  logic [63:0]             m_i,       // Modulus
-  input  logic [63:0]             m_bl_i,    // Modulus bitlength
-  input  logic [63:0]             mu_i,      // Precomputed mu
-  output logic [127:0]            result_o,  // Result
+  input  logic [DATA_LENGTH-1:0]             x_i,       // Input
+  input  logic [DATA_LENGTH-1:0]             m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]             m_bl_i,    // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]             mu_i,      // Precomputed mu
+  output logic [DATA_LENGTH-1:0]            result_o,  // Result
   output logic                    valid_o    // Result valid flag
 );
 
 typedef enum logic[2:0] {LOAD, PRECOMP, APPROX, REDUCE, FINISH} state_t;
 
 state_t curr_state, next_state;
-logic [127:0] x_mu;
-logic [63:0] q_m;
-logic [63:0] tmp;
-logic [63:0] mul_i;
-logic [63:0] result_n, result_p;
+logic [2 * DATA_LENGTH-1:0] x_mu;
+logic [DATA_LENGTH-1:0] q_m;
+logic [DATA_LENGTH-1:0] tmp;
+logic [DATA_LENGTH-1:0] mul_i;
+logic [DATA_LENGTH-1:0] result_n, result_p;
 
 
 logic ctrl_update_operands;
@@ -93,7 +94,7 @@ always_comb begin
 end
 
 
-logic [127:0] xmu_precomp;
+logic [2 * DATA_LENGTH-1:0] xmu_precomp;
 logic m_finish;
 logic busy_p_o;
 multiplier_top multiplier_precomp(
@@ -108,7 +109,7 @@ multiplier_top multiplier_precomp(
 );
 
 logic busy_a_o;
-logic [127:0] qm_result;
+logic [2 * DATA_LENGTH-1:0] qm_result;
 multiplier_top multiplier_approx(
   .clk_i(clk_i),             // Rising edge active clk.
   .rst_ni(rst_ni),           // Active low reset.

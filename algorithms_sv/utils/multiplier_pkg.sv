@@ -14,6 +14,10 @@ package multiplier_pkg;
 
     typedef enum {
         idle, 
+        init, 
+        compute_mul,
+        compute_acc,
+        compute_chk,
         compute,
         finish
     } state_t;

@@ -1,6 +1,5 @@
 
-// import multiplier_pkg::*;
-
+import multiplier_pkg::*;
 module montgomery_tb;
 
     logic                       clk_i;           // Rising edge active clk.
@@ -8,14 +7,14 @@ module montgomery_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [64-1:0]              indata_x_i   [64-1:0];      // Input data -> operand a.
-    logic [64-1:0]              indata_x_m_i [64-1:0];      // Input data -> operand a.
-    logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;
-    logic [64-1:0]              indata_minv_i;   // Input data -> modular inverse.
-    logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
+    logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input data -> operand a.
+    logic [DATA_LENGTH-1:0]     indata_x_m_i [DATA_LENGTH-1:0];      // Input data -> operand a.
+    logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_m_bl_i;
+    logic [DATA_LENGTH-1:0]     indata_minv_i;   // Input data -> modular inverse.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 
-    logic [64-1:0]              reference_o [64-1:0];
+    logic [DATA_LENGTH-1:0]     reference_o [DATA_LENGTH-1:0];
 
     // Instantiate module
     montgomery_pipelined uut (
@@ -43,7 +42,7 @@ module montgomery_tb;
     initial begin
       integer fp;
 
-      fp = $fopen("kyber_input.txt", "r");
+      fp = $fopen("dilithium_input.txt", "r");
       if (!fp) begin
         $fatal(1, "Cannot open input file.");
       end
@@ -77,12 +76,12 @@ module montgomery_tb;
       // indata_minv_i = 64'hD988C5E7CA39B7ED;
       // indata_m_i    = 64'h3A32E4C4C7A8C21B;
 
-      indata_m_i = 12'hD01;    // Kyber
-      indata_minv_i = -24'h301;
+      // indata_m_i = 12'hD01;    // Kyber
+      // indata_minv_i = -24'h301;
       // indata_minv_i = 24'hFCFF;
 
-      // indata_m_i    = 23'h7FE001;    // Dilithium
-      // indata_minv_i = -23'h2001;   // -(2^13 + 1)      
+      indata_m_i    = 23'h7FE001;    // Dilithium
+      indata_minv_i = -23'h2001;   // -(2^13 + 1)      
       // indata_minv_i = 23'hDFFF;    // twos(-(2^13 + 1))
 
       #20;
