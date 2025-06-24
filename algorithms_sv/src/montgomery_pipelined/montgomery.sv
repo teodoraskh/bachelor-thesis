@@ -8,13 +8,15 @@ module montgomery_pipelined (
   input  logic [DATA_LENGTH-1:0]  q_bl_i,    // Modulus bitlength.
   input  logic [DATA_LENGTH-1:0]  qinv_i,    // Modular inverse.
   output logic [DATA_LENGTH-1:0]  result_o,  // Result.
-  output logic                    valid_o    // Result valid flag
+  output logic                    valid_o    // Result valid flag.
 );
+localparam MULTIPLIER_DEPTH = NUM_MULS + 2;
+localparam PIPELINE_DEPTH   = MULTIPLIER_DEPTH * 2 + 7;
+logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
+
 logic busy_m_o;
 logic busy_s_o;
-
 logic s_finish, m_finish, d_finish;
-logic start_delayed, s_finish_delayed;
 
 logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, res_reg;
 logic [DATA_LENGTH-1:0] qinv_reg;
@@ -23,19 +25,24 @@ logic [DATA_LENGTH-1:0] lsb_reg;
 logic [DATA_LENGTH-1:0] x_delayed;
 
 logic [2 * DATA_LENGTH-1:0] m_rescaled;
+logic [2 * DATA_LENGTH-1:0] m_rescaled_reg;
 logic [2 * DATA_LENGTH-1:0] lsb_rescaled;
+logic [2 * DATA_LENGTH-1:0] lsb_rescaled_reg;
+
+always @(posedge clk_i) begin
+    start_delayed[0] <= start_i;
+end
+
+generate
+    for(genvar shft=0; shft < PIPELINE_DEPTH-1; shft=shft+1) begin:
+        always @(posedge clk_i) begin
+            start_delayed[shft+1] <= start_delayed[shft];
+        end
+    end
+endgenerate
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 5), // 2 * multiplier latency + 5 (or +1 for each stage)
-    .DATA(1) 
-) shift_finish (
-    .clk_i(clk_i),
-    .data_i(start_i),
-    .data_o(d_finish)
-);
-
-shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 3), // 2 * multiplier latency + 3 (3 because we need x_i 3 cycles later)
+    .SHIFT(MULTIPLIER_DEPTH * 2 + 5), // 2 * multiplier latency + 5 (5 because we need x_i 5 stages later)
     .DATA(64)
 ) shift_in (
     .clk_i(clk_i),
@@ -50,13 +57,11 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     q_reg         <= 64'b0;
     q_bl_reg      <= 64'b0;
     qinv_reg      <= 64'b0;
-    start_delayed <= 0;
   end else begin
     x_reg         <= x_i;
     q_reg         <= q_i;
     q_bl_reg      <= q_bl_i;
     qinv_reg      <= qinv_i;
-    start_delayed <= 1;
   end
 end
 
@@ -64,7 +69,7 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     lsb_reg <= 64'b0;
-  end else if(start_delayed) begin
+  end else if(start_delayed[0]) begin
     lsb_reg <= x_reg & ((1 << q_bl_reg) - 1);
   end else begin
     lsb_reg <= lsb_reg;
@@ -75,7 +80,7 @@ end
 multiplier_top multiplier_precomp(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
-  .start_i(start_delayed),    // Start signal.
+  .start_i(start_delayed[2]), // Start signal.
   .busy_o(busy_s_o),          // Module busy.
   .finish_o(s_finish),        // Module finish.
   .indata_a_i(lsb_reg),       // Input data -> operand a.
@@ -83,17 +88,23 @@ multiplier_top multiplier_precomp(
   .outdata_r_o(lsb_rescaled)
 );
 
+// pipeline register for lsb_rescaled
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    lsb_rescaled_reg <= '0;
+  end else if (start_delayed[MULTIPLIER_DEPTH + 2]) begin
+    lsb_rescaled_reg <= lsb_rescaled;
+  end
+end
+
 // m <- (x mod R) * Q' mod R
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     m_reg <= 64'b0;
-    s_finish_delayed <= 0;
-  end else if(s_finish)begin
-    m_reg <= lsb_rescaled & ((1 << q_bl_reg) - 1);
-    s_finish_delayed <= 1;
+  end else if(start_delayed[MULTIPLIER_DEPTH + 3])begin
+    m_reg <= lsb_rescaled_reg & ((1 << q_bl_reg) - 1);
   end else begin
     m_reg <= m_reg;
-    s_finish_delayed <= 0;
   end
 end
 
@@ -101,7 +112,7 @@ end
 multiplier_top multiplier_approx(
   .clk_i(clk_i),                       // Rising edge active clk.
   .rst_ni(rst_ni),                     // Active low reset.
-  .start_i(s_finish_delayed),          // Start signal.
+  .start_i(start_delayed[MULTIPLIER_DEPTH + 4]),// Start signal.
   .busy_o(busy_m_o),                   // Module busy.
   .finish_o(m_finish),                 // Module finish.
   .indata_a_i(m_reg),                  // Input data -> operand a.
@@ -109,12 +120,21 @@ multiplier_top multiplier_approx(
   .outdata_r_o(m_rescaled)
 );
 
+// pipeline register for m_rescaled
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    m_rescaled_reg <= '0;
+  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
+    m_rescaled_reg <= m_rescaled;
+  end
+end
+
 // t <- (x + m * Q) / R
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     res_reg <= 64'b0;
-  end else if(m_finish)begin
-    res_reg <= (x_delayed + m_rescaled) >> q_bl_reg;
+  end else if(start_delayed[MULTIPLIER_DEPTH * 2 + 6])begin
+    res_reg <= (x_delayed + m_rescaled_reg) >> q_bl_reg;
   end else begin
     res_reg <= res_reg;
   end
@@ -129,6 +149,6 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-assign valid_o = d_finish;
+assign valid_o = start_delayed[PIPELINE_DEPTH - 1];
 
 endmodule : montgomery_pipelined
