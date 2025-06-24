@@ -10,21 +10,21 @@ module barrett_ds_tb;
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_q_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_q_bl_i;   // Input data -> operand b.
     logic [DATA_LENGTH-1:0]     indata_mu_i;     // Input data -> operand b.
-    logic [DATA_LENGTH-1:0]     indata_m_bl_i;   // Input data -> operand b.
     logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 
-    logic [DATA_LENGTH-1:0]              reference_o;
+    logic [DATA_LENGTH-1:0]     reference_o;
 
     barrett_ds uut (
         .clk_i                  (clk_i),
         .rst_ni                 (rst_ni),
         .start_i                (start_i),    
         .x_i                    (indata_x_i),
-        .m_i                    (indata_m_i),
+        .q_i                    (indata_q_i),
+        .q_bl_i                 (indata_q_bl_i),
         .mu_i                   (indata_mu_i),
-        .m_bl_i                 (indata_m_bl_i),
         .result_o               (outdata_r_o),
         .valid_o                (finish_o)    
     );
@@ -48,21 +48,8 @@ module barrett_ds_tb;
     rst_ni    = 0;
     start_i   = 0;
 
-    // indata_m_i  = 64'h3A32E4C4C7A8C21B;
-    // indata_mu_i = 64'h466123E72A6BDD53;
-    // indata_m_i  = 64'h7FE001; //Dilithium
-    // indata_mu_i = 64'h802007;
-    // indata_m_i = 64'h7FFFFFFF; // Mersenne
-    // indata_m_i = 32'h80000001; // Fermat
-    // indata_m_i = 32'h21;
-    // indata_m_i = 32'h2001;
-
-    // indata_m_i = 64'hD01;   //Kyber
-    // indata_mu_i = 64'h13AF;
-    // indata_mu_i = 64'h7FFFFF;   //
-
-    assign indata_m_bl_i = MODULUS_LENGTH;
-    assign indata_m_i    = MODULUS;
+    assign indata_q_bl_i = MODULUS_LENGTH;
+    assign indata_q_i    = MODULUS;
     assign indata_mu_i   = MU;
 
     inp_file = $fopen("dilithium_input.txt", "r");
@@ -84,7 +71,7 @@ module barrett_ds_tb;
 
         if (indata_x_i != 0) begin
           $display("[%04t] > Input data    : %h", $time, indata_x_i);
-          reference_o = indata_x_i % indata_m_i;
+          reference_o = indata_x_i % indata_q_i;
 
           @(posedge clk_i);
           start_i = 1;

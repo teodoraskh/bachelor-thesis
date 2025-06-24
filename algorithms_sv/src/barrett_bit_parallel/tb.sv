@@ -17,11 +17,15 @@ module barrett_bp_tb;
     logic [DATA_LENGTH-1:0]     reference_o;
 
     barrett_parallel uut (
+      .clk_i                  (clk_i),
+      .rst_ni                 (rst_ni),
+      .start_i                (start_i),
       .x_i                    (indata_x_i),
       .m_i                    (indata_m_i),
       .mu_i                   (indata_mu_i),
       .m_bl_i                 (indata_m_bl_i),
-      .result_o               (outdata_r_o)
+      .result_o               (outdata_r_o),
+      .valid_o                (finish_o)
     );
 
     initial forever #5 clk_i = ~clk_i;
@@ -54,12 +58,26 @@ module barrett_bp_tb;
         $display("File opened.");
     end
 
+    #10;
+    rst_ni = 0;
+    #40;
+    rst_ni = 1;
+    #20;
+
     while (!$feof(inp_file)) begin
        $fscanf(inp_file, "%h", indata_x_i);
         #5
         if (indata_x_i != 0) begin
           $display("[%04t] > Input data    : %h", $time, indata_x_i);
           reference_o = indata_x_i % indata_m_i;
+          
+          @(posedge clk_i);
+          start_i = 1;
+          @(posedge clk_i);
+          start_i = 0;
+          wait (finish_o == 1);
+
+          @(posedge clk_i);
 
           $display("[%04t] > Received data : %h", $time, outdata_r_o);
           $display("[%04t] > Reference data: %h", $time, reference_o);

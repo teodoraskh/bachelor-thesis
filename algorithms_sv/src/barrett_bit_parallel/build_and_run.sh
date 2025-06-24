@@ -6,6 +6,7 @@ iverilog -g2012 -I.. -o barrett_bp_tb.vvp \
   ../../utils/multiplier_pkg.sv \
   ../../utils/multiplier_16x16_parallel.sv \
   ../../utils/multiplier_parallel.sv \
+  ../../utils/shiftreg.sv \
   barrett_bp.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
 

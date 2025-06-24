@@ -4,8 +4,8 @@ module barrett_ds (
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]  m_bl_i,    // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]  q_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  q_bl_i,    // Modulus bitlength
   input  logic [DATA_LENGTH-1:0]  mu_i,      // Precomputed mu
   output logic [DATA_LENGTH-1:0]  result_o,  // Result
   output logic                    valid_o    // Result valid flag
@@ -17,7 +17,7 @@ state_t curr_state, next_state;
 logic [2 * DATA_LENGTH-1:0] x_mu;
 logic [DATA_LENGTH-1:0] q_m;
 logic [DATA_LENGTH-1:0] tmp;
-logic [DATA_LENGTH-1:0] mul_i;
+logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, mu_reg;
 logic [DATA_LENGTH-1:0] result_n, result_p;
 
 
@@ -36,19 +36,25 @@ logic ctrl_update_res_with_qm;
 
 
 always_comb begin
-  ctrl_update_operands    = (curr_state == LOAD);
-  ctrl_update_res_with_xmu= (curr_state == PRECOMP) && (m_finish == 1);
-  ctrl_update_result      = (curr_state == FINISH);
-  ctrl_update_res_with_qm = (curr_state == APPROX) && (a_finish == 1);
-  ctrl_adjust_result      = (curr_state == REDUCE);
+  ctrl_update_operands     = (curr_state == LOAD);
+  ctrl_update_res_with_xmu = (curr_state == PRECOMP) && (m_finish == 1);
+  ctrl_update_result       = (curr_state == FINISH);
+  ctrl_update_res_with_qm  = (curr_state == APPROX) && (a_finish == 1);
+  ctrl_adjust_result       = (curr_state == REDUCE);
 end
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
-        mul_i <= 0;
+        x_reg    <= 0;
+        q_reg    <= 0;
+        q_bl_reg <= 0;
+        mu_reg   <= 0;
     end 
     else if (ctrl_update_operands) begin
-        mul_i <= x_i;
+        x_reg    <= x_i;
+        q_reg    <= q_i;
+        q_bl_reg <= q_bl_i;
+        mu_reg   <= mu_i;
     end
 end
 
@@ -103,8 +109,8 @@ multiplier_top multiplier_precomp(
   .start_i(start_i),          // Start signal.
   .busy_o(busy_p_o),          // Module busy.
   .finish_o(m_finish),        // Module finish.
-  .indata_a_i(mul_i),         // Input data -> operand a.
-  .indata_b_i(mu_i),          // Input data -> operand a.
+  .indata_a_i(x_reg),         // Input data -> operand a.
+  .indata_b_i(mu_reg),          // Input data -> operand a.
   .outdata_r_o(xmu_precomp)
 );
 
@@ -117,7 +123,7 @@ multiplier_top multiplier_approx(
   .busy_o(busy_a_o),         // Module busy.
   .finish_o(a_finish),       // Module finish.
   .indata_a_i(result_p),     // Input data -> operand a.
-  .indata_b_i(m_i),          // Input data -> operand b.
+  .indata_b_i(q_reg),        // Input data -> operand b.
   .outdata_r_o(qm_result)
 );
 
@@ -139,10 +145,10 @@ always_ff @(posedge clk_i) begin
         result_p <= 0;
     end 
     else if (ctrl_update_res_with_xmu) begin
-        result_p <= xmu_precomp >> (2 * m_bl_i); // Approximation step
+        result_p <= xmu_precomp >> (2 * q_bl_reg); // Approximation step
     end
     else if (ctrl_update_res_with_qm) begin
-        result_p <= mul_i - qm_result; // Final reduction step
+        result_p <= x_reg - qm_result; // Final reduction step
     end
 end
 
@@ -151,8 +157,8 @@ always_ff @(posedge clk_i) begin
     result_n <= 64'b0;
   end
   else if (ctrl_adjust_result) begin
-    if(result_p >= m_i) begin
-      result_n <= result_p - m_i;
+    if(result_p >= q_reg) begin
+      result_n <= result_p - q_reg;
     end 
     else begin
       result_n <= result_p;
