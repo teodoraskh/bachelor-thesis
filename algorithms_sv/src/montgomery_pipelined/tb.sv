@@ -4,17 +4,17 @@ import params_pkg::*;
 
 module montgomery_tb;
 
-    logic                       clk_i;           // Rising edge active clk.
-    logic                       rst_ni;          // Active low reset.
-    logic                       start_i;         // Start signal.
-    logic                       busy_o;          // Module busy. 
-    logic                       finish_o;        // Module finish.
-    logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_x_m_i [DATA_LENGTH-1:0];      // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
-    logic [DATA_LENGTH-1:0]     indata_m_bl_i;
-    logic [DATA_LENGTH-1:0]     indata_minv_i;   // Input data -> modular inverse.
-    logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
+    logic                       clk_i;                               // Rising edge active clk.
+    logic                       rst_ni;                              // Active low reset.
+    logic                       start_i;                             // Start signal.
+    logic                       busy_o;                              // Module busy. 
+    logic                       finish_o;                            // Module finish.
+    logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input data x.
+    logic [DATA_LENGTH-1:0]     indata_x_m_i [DATA_LENGTH-1:0];      // Input data x in Montgomery form.
+    logic [DATA_LENGTH-1:0]     indata_q_i;                          // Modulus.
+    logic [DATA_LENGTH-1:0]     indata_q_bl_i;                       // Modulus bitlength.
+    logic [DATA_LENGTH-1:0]     indata_qinv_i;                       // Modular inverse.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;                         // Output data.
 
     logic [DATA_LENGTH-1:0]     reference_o [DATA_LENGTH-1:0];
 
@@ -22,10 +22,10 @@ module montgomery_tb;
       .clk_i                  (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),    
-      .x_i                    (indata_x_m),
-      .m_i                    (indata_m_i),
-      .m_bl_i                 (indata_m_bl_i),
-      .minv_i                 (indata_minv_i),
+      .x_i                    (indata_x_m),   // Input is passed in Montgomery form.
+      .q_i                    (indata_q_i),
+      .q_bl_i                 (indata_q_bl_i),
+      .qinv_i                 (indata_qinv_i),
       .result_o               (outdata_r_o),
       .valid_o                (finish_o)    
     );
@@ -58,12 +58,12 @@ module montgomery_tb;
     end
 
     integer inp_file;
-    logic [63:0] indata_x;
-    logic [63:0] indata_x_m;
+    logic [63:0] indata_x;   // Native input
+    logic [63:0] indata_x_m; // Input in Montgomery form
 
-    assign indata_m_bl_i = MODULUS_LENGTH;
-    assign indata_m_i    = MODULUS;
-    assign indata_minv_i = MOD_INV;     
+    assign indata_q_bl_i = MODULUS_LENGTH;
+    assign indata_q_i    = MODULUS;
+    assign indata_qinv_i = MOD_INV;     
   
     initial begin
       $display("\n=======================================");
@@ -73,14 +73,6 @@ module montgomery_tb;
       clk_i = 0;
       rst_ni = 1;
       start_i = 0;
-      // indata_minv_i = 64'hD988C5E7CA39B7ED;
-      // indata_m_i    = 64'h3A32E4C4C7A8C21B;
-
-      // indata_m_i = 12'hD01;    // Kyber
-      // indata_minv_i = -24'h301;
-      // indata_minv_i = 24'hFCFF;
-
-      // indata_minv_i = 23'hDFFF;    // twos(-(2^13 + 1))
 
       #20;
       rst_ni = 1;
@@ -89,7 +81,7 @@ module montgomery_tb;
 
         indata_x = indata_x_i[i];
         indata_x_m = indata_x_m_i[i];
-        reference_o[i] = indata_x % indata_m_i;
+        reference_o[i] = indata_x % indata_q_i;
         start_i = 1;
 
         $display("[%04t] > Set indata_x_i: %h", $time, indata_x_m);
