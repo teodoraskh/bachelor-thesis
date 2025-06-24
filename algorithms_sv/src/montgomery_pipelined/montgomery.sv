@@ -12,16 +12,15 @@ module montgomery_pipelined (
 );
 localparam MULTIPLIER_DEPTH = NUM_MULS + 2;
 localparam PIPELINE_DEPTH   = MULTIPLIER_DEPTH * 2 + 7;
+
+
 logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
 
 logic busy_m_o;
 logic busy_s_o;
 logic s_finish, m_finish, d_finish;
 
-logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, res_reg;
-logic [DATA_LENGTH-1:0] qinv_reg;
-logic [DATA_LENGTH-1:0] m_reg;
-logic [DATA_LENGTH-1:0] lsb_reg;
+logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, res_reg, qinv_reg, m_reg, lsb_reg;
 logic [DATA_LENGTH-1:0] x_delayed;
 
 logic [2 * DATA_LENGTH-1:0] m_rescaled;
@@ -34,7 +33,7 @@ always @(posedge clk_i) begin
 end
 
 generate
-    for(genvar shft=0; shft < PIPELINE_DEPTH-1; shft=shft+1) begin:
+    for(genvar shft=0; shft < PIPELINE_DEPTH-1; shft=shft+1) begin: DELAY_BLOCK
         always @(posedge clk_i) begin
             start_delayed[shft+1] <= start_delayed[shft];
         end
