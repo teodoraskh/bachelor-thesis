@@ -3,24 +3,28 @@ module barrett_pipelined (
   input  logic                    clk_i,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]  x_i,
-  input  logic [DATA_LENGTH-1:0]  m_i,
-  input  logic [DATA_LENGTH-1:0]  m_bl_i,
-  input  logic [DATA_LENGTH-1:0]  mu_i,
-  output logic [DATA_LENGTH-1:0]  result_o,
-  output logic                    valid_o
+  input  logic [DATA_LENGTH-1:0]  x_i,      // Input x.
+  input  logic [DATA_LENGTH-1:0]  q_i,      // Modulus.
+  input  logic [DATA_LENGTH-1:0]  q_bl_i,   // Modulus bitlength.
+  input  logic [DATA_LENGTH-1:0]  mu_i,     // Modular inverse.
+  output logic [DATA_LENGTH-1:0]  result_o, // Result.
+  output logic                    valid_o   // Result valid flag.
 );
+logic busy_p_o;
+logic busy_a_o;
 
-typedef enum logic[3:0] {IDLE, LOAD, APPROX, REDUCE, FINISH} state_t;
+logic m_finish, a_finish, d_finish;
+logic start_delayed, m_finish_delayed;
 
-state_t curr_state, next_state;
-logic m_finish, a_finish, start_gated;
-logic d_finish;
-
+logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, res_reg, mu_reg;
 logic [DATA_LENGTH-1:0] x_delayed;
+logic [DATA_LENGTH-1:0] q_approx;
+
+logic [2 * DATA_LENGTH-1:0] qm_result;
+logic [2 * DATA_LENGTH-1:0] xmu_precomp;
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2), 
+    .SHIFT((NUM_MULS + 2) * 2 + 4), // 2 * multiplier latency + 4 (or +1 for each stage)
     .DATA(1)
 ) shift_finish (
     .clk_i(clk_i),
@@ -29,7 +33,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2),
+    .SHIFT((NUM_MULS + 2) * 2 + 2), // 2 * multiplier latency + 2 (2 because we need x_i 2 stages later)
     .DATA(64)
 ) shift_in (
     .clk_i(clk_i),
@@ -37,134 +41,81 @@ shiftreg #(
     .data_o(x_delayed)
 );
 
-logic early_bypass;
-logic [DATA_LENGTH-1:0] bypass_value;
-
+// LOAD
 always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-        bypass_value <= 64'b0;
-    end else begin
-        bypass_value <= x_i;
-    end
+  if(!rst_ni) begin
+    x_reg         <= 64'b0;
+    q_reg         <= 64'b0;
+    q_bl_reg      <= 64'b0;
+    mu_reg        <= 64'b0;
+    start_delayed <= 0;
+  end else begin
+    x_reg         <= x_i;
+    q_reg         <= q_i;
+    q_bl_reg      <= q_bl_i;
+    mu_reg        <= mu_i;
+    start_delayed <= 1;
+  end
 end
 
-assign early_bypass = (x_i < m_i) && start_i;
-assign start_gated  = start_i && !early_bypass;
-
-logic early_bypass_valid;
-shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2),
-    .DATA(1)
-) delay_bypass_flag (
-    .clk_i(clk_i),
-    .data_i(early_bypass),
-    .data_o(early_bypass_valid)
-);
-
-
-always_ff @(posedge clk_i) begin
-    if (rst_ni == 0) begin
-        curr_state <= LOAD;
-    end 
-    else begin
-        curr_state <= next_state;
-    end
-end
-
-
-always_comb begin
-    next_state = curr_state; // default is to stay in current state
-    case (curr_state)
-        IDLE: begin
-          if (curr_state == IDLE && start_i) begin
-              if (x_i < m_i) begin
-                  next_state = FINISH;
-              end else begin
-                  next_state = LOAD;
-              end
-          end
-        end
-        LOAD: begin
-            if (busy_p_o) next_state = APPROX;
-        end
-        APPROX: begin
-          if(a_finish) begin // a_finish can indicate that the approximation has completed
-            next_state = REDUCE;
-          end
-        end
-        REDUCE : begin
-            if (d_finish) begin
-                next_state = FINISH;
-            end
-        end
-        FINISH : begin
-            next_state = FINISH;
-        end
-        default : begin
-            next_state = LOAD;
-        end
-    endcase
-end
-
-logic busy_p_o;
-logic [2 * DATA_LENGTH-1:0] xmu_precomp;
-logic [DATA_LENGTH-1:0] safe_x_i;
-logic [DATA_LENGTH-1:0] safe_mu_i;
-
-assign safe_x_i = start_gated ? x_i : 64'b0;
-assign safe_mu_i = start_gated ? mu_i : 64'b0;
+// x * mu
 multiplier_top multiplier_precomp(
   .clk_i(clk_i),    
   .rst_ni(rst_ni),
-  .start_i(start_gated),
+  .start_i(start_delayed),
   .busy_o(busy_p_o),
   .finish_o(m_finish),
-  .indata_a_i(safe_x_i),        
-  .indata_b_i(safe_mu_i),
+  .indata_a_i(x_reg),        
+  .indata_b_i(mu_reg),
   .outdata_r_o(xmu_precomp)
 );
 
-logic [DATA_LENGTH-1:0] q_approx;
-assign q_approx = xmu_precomp >> (2 * m_bl_i);
+// q <- (x * mu) / 2^2k
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if(!rst_ni) begin
+    q_approx <= 64'b0;
+    m_finish_delayed <= 0;
+  end else if (m_finish) begin
+    q_approx <= xmu_precomp >> (2 * q_bl_i);
+    m_finish_delayed <= 1;
+  end else begin
+    q_approx <= q_approx;
+    m_finish_delayed <= 0;
+  end
+end
 
-logic busy_a_o;
-logic [2 * DATA_LENGTH-1:0] qm_result;
+// q * M
 multiplier_top multiplier_approx(
-  .clk_i(clk_i),             // Rising edge active clk.
-  .rst_ni(rst_ni),           // Active low reset.
-  .start_i(m_finish),        // Start signal.
-  .busy_o(busy_a_o),         // Module busy.
-  .finish_o(a_finish),       // Module finish.
-  .indata_a_i(q_approx),     // Input data -> operand a.
-  .indata_b_i(m_i),          // Input data -> operand b.
+  .clk_i(clk_i),               // Rising edge active clk.
+  .rst_ni(rst_ni),             // Active low reset.
+  .start_i(m_finish_delayed),  // Start signal.
+  .busy_o(busy_a_o),           // Module busy.
+  .finish_o(a_finish),         // Module finish.
+  .indata_a_i(q_approx),       // Input data -> operand a.
+  .indata_b_i(q_reg),          // Input data -> operand b.
   .outdata_r_o(qm_result)
 );
 
-logic [DATA_LENGTH-1:0] result_next;
-logic [DATA_LENGTH-1:0] tmp;
-
-always_comb begin
-    tmp = x_delayed - qm_result[DATA_LENGTH-1:0];
-    result_next = (tmp < m_i) ? tmp : tmp - m_i;
-end
-
+// r <- (x - q * M)
 always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-        result_o <= 64'b0;
-        valid_o <= 1'b0;
-    end else begin
-        if (early_bypass_valid) begin
-            result_o <= x_delayed;
-            valid_o <= 1'b1;
-        end
-        else if (d_finish) begin
-            result_o <= result_next;
-            valid_o <= 1'b1;
-        end
-        else begin
-            valid_o <= 1'b0;
-        end
-    end
+  if (!rst_ni) begin
+    res_reg <= 64'b0;
+  end else if (a_finish) begin
+    res_reg <= x_delayed - qm_result;
+  end else begin
+    res_reg <= res_reg;
+  end
 end
+
+// Conditional subtraction
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    result_o <= 64'b0;
+  end else begin
+    result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
+  end
+end
+
+assign valid_o = d_finish;
 
 endmodule : barrett_pipelined
