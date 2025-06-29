@@ -1,5 +1,5 @@
 
-// import multiplier_pkg::*;
+import multiplier_pkg::*;
 
 module shiftadd_bp_tb;
     logic                       clk_i;           // Rising edge active clk.
@@ -7,13 +7,12 @@ module shiftadd_bp_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [64-1:0]              indata_x_i;      // Input data -> operand a.
-    logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_mu_i;     // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;   // Input data -> operand b.
-    logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
+    logic [DATA_LENGTH-1:0]     indata_x_i;      // Number to reduce x.
+    logic [DATA_LENGTH-1:0]     indata_m_i;      // Modulus.
+    logic [DATA_LENGTH-1:0]     indata_m_bl_i;   // Modulus bitlength.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;     // Result x mod m.
 
-    logic [64-1:0]              reference_o;
+    logic [DATA_LENGTH-1:0]     reference_o;
 
     shiftadd_parallel uut (
       .x_i                    (indata_x_i),

@@ -2,6 +2,7 @@ iverilog -E ../../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit
 
 iverilog -g2012 -I. -o kyber_tb.vvp \
   ../../utils/multiplier_pkg.sv\
+  ../../utils/shiftreg.sv\
   reduction.sv \
   reduction_top.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
@@ -14,6 +15,3 @@ else
   echo "No waveform file generated"
   exit 1
 fi
-
-# Cleanup (optional)
-# rm -f *.vvp *.vcd

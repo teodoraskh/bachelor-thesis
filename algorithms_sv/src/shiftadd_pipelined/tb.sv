@@ -1,36 +1,33 @@
 
-// import multiplier_pkg::*;
+import multiplier_pkg::*;
 
 module shiftadd_tb;
 
-    logic                       clk_i;           // Rising edge active clk.
-    logic                       rst_ni;          // Active low reset.
-    logic                       start_i;         // Start signal.
-    logic                       busy_o;          // Module busy. 
-    logic                       finish_o;        // Module finish.
-    logic [64-1:0]              indata_x_i   [49-1:0];      // Input data -> operand a.
-    logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;
-    logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
+    logic                       clk_i;                      // Rising edge active clk.
+    logic                       rst_ni;                     // Active low reset.
+    logic                       start_i;                    // Start signal.
+    logic                       busy_o;                     // Module busy. 
+    logic                       finish_o;                   // Module finish.
+    logic [DATA_LENGTH-1:0]     indata_x_i   [49-1:0];      // Array of inputs x.
+    logic [DATA_LENGTH-1:0]     indata_m_i;                 // Modulus.
+    logic [DATA_LENGTH-1:0]     indata_m_bl_i;              // Modulus bitlength.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;                // Result x mod m.
 
-    logic [64-1:0]              reference_o [49-1:0];
+    logic [DATA_LENGTH-1:0]     reference_o [49-1:0];
 
-    // Instantiate module
     shiftadd_pipelined uut (
       .clk_i                  (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),    
       .x_i                    (indata_x),
       .m_i                    (indata_m_i),
-      .m_bl_i                 (indata_m_bl_i), //Modulus bitlength
+      .m_bl_i                 (indata_m_bl_i),
       .result_o               (outdata_r_o),
       .valid_o                (finish_o)    
     );
 
-    // Clock generation
     initial forever #5 clk_i = ~clk_i;
 
-    // Dumpfile 
     initial begin
         $dumpfile("shiftadd_tb.vcd");
         $dumpvars(0, shiftadd_tb);
@@ -74,12 +71,10 @@ module shiftadd_tb;
       // indata_m_i = 64'h80000001; // Fermat
 
       #20;
-      // $display("[%04t] > Set reset signal", $time);
       rst_ni = 1;
       for(integer i = 0; i < NUM_DATA; i ++) begin
         #10;
-        // $display("[%04t] > Set start signal", $time);
-        // Wait a few cycles
+
         indata_x = indata_x_i[i];
         reference_o[i] = indata_x % indata_m_i;
         start_i = 1;
@@ -90,7 +85,6 @@ module shiftadd_tb;
       end
 
       #10;
-      // $display("[%04t] > Reset start signal", $time);
       start_i = 0;
     end
 
@@ -99,7 +93,6 @@ module shiftadd_tb;
       $display("[%04t] < Wait for finish signal", $time);
       @(posedge finish_o)
       $display("[%04t] > Received finish signal", $time);
-      // $display("");
       #1;
       for(integer i = 0; i < NUM_DATA; i ++) begin
         $display("[%04t] > OUT data : %h", $time, outdata_r_o);
@@ -118,7 +111,6 @@ module shiftadd_tb;
       $display("[%04t] > Finish shiftadd test", $time);
       $display("=======================================\n");
 
-      // Finish simulation
       #100;
       $finish;
     end

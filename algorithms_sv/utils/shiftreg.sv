@@ -1,3 +1,7 @@
+//==========================================================================
+// Intellectual property of the Cryptographic Engineering Dpt., ISEC, TUGraz
+//==========================================================================
+
 module shiftreg #(
     parameter SHIFT = 1, 
     parameter DATA  = 64

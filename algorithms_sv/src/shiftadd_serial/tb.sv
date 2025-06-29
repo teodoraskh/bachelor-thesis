@@ -1,5 +1,4 @@
-
-// import multiplier_pkg::*;
+import multiplier_pkg::*;
 
 module shiftadd_tb;
 
@@ -8,12 +7,12 @@ module shiftadd_tb;
     logic                       start_i;         // Start signal.
     logic                       busy_o;          // Module busy. 
     logic                       finish_o;        // Module finish.
-    logic [64-1:0]              indata_x_i;      // Input data -> operand a.
-    logic [64-1:0]              indata_m_i;      // Input data -> operand b.
-    logic [64-1:0]              indata_m_bl_i;   // Input data -> operand b.
-    logic [64-1:0]              outdata_r_o;     // Output data -> result a*b.
+    logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
+    logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_m_bl_i;   // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 
-    logic [64-1:0]              reference_o;
+    logic [DATA_LENGTH-1:0]     reference_o;
 
     shiftadd_serialized uut (
         .clk_i                  (clk_i),

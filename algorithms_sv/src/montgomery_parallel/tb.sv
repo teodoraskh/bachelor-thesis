@@ -11,7 +11,7 @@ module montgomery_bp_tb;
   logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
   logic [DATA_LENGTH-1:0]     indata_xm_i;     // Input data -> operand a.
   logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
-  logic [DATA_LENGTH-1:0]     indata_minv_i;   // Input data -> operand b.
+  logic signed [DATA_LENGTH-1:0]     indata_minv_i;   // Input data -> operand b.
   logic [DATA_LENGTH-1:0]     indata_m_bl_i;   // Input data -> operand b.
   logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 

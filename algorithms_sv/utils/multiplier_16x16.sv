@@ -1,3 +1,7 @@
+//==========================================================================
+// Intellectual property of the Cryptographic Engineering Dpt., ISEC, TUGraz
+//==========================================================================
+
 import multiplier_pkg::*;
 
 module multiplier_16x16 (

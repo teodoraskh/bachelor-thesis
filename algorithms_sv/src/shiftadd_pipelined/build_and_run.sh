@@ -1,6 +1,7 @@
-iverilog -E ../../utils/params_pkg.sv  || { echo "Package syntax error"; exit 1; }
+iverilog -E ../../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
 
 iverilog -g2012 -I. -o shiftadd.vvp \
+  ../../utils/multiplier_pkg.sv \
   ../../utils/shiftreg.sv \
   shiftadd.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }

@@ -10,7 +10,7 @@ package params_pkg;
     // Dilithium is default
     parameter integer           MODULUS_LENGTH    = 23;
     parameter logic[LENGTH-1:0] MODULUS           = 8380417; //
-    parameter logic[LENGTH-1:0] MOD_INV           = -8193;   // -(2^13 + 1)
+    parameter logic signed [LENGTH-1:0] MOD_INV   = -8193;   // -(2^13 + 1)
     parameter logic[LENGTH-1:0] MU                = 8396807;
 
     // Kyber

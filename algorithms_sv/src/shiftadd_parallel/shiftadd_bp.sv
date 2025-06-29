@@ -1,6 +1,6 @@
 module shiftadd_parallel (
-  input  logic [DATA_LENGTH-1:0]  x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  x_i,
+  input  logic [DATA_LENGTH-1:0]  m_i,
   input  logic [DATA_LENGTH-1:0]  m_bl_i,
   output logic [DATA_LENGTH-1:0]  result_o
 );
@@ -19,13 +19,8 @@ logic [DATA_LENGTH-1:0] msb_mask;
 logic [DATA_LENGTH-1:0] inner_mask;
 logic [NUM_CHUNKS-1:0]  num_folds;
 
-logic is_dilithium;
-logic is_kyber;
 logic is_fermat;   
 logic is_mersenne; 
-
-assign is_kyber     = (m_i == ((1 << 12) - (1 << 9) - (1 << 8) + 1));
-assign is_dilithium = (m_i == ((1 << 23) - (1 << 13) + 1));
 
 assign msb_mask     = 1 << (m_bl_i - 1);
 assign inner_mask   = ((1 << (m_bl_i - 1)) - 1) & ~1;
@@ -79,41 +74,9 @@ always_comb begin
             result_o = result_o + (fold_sign[i] ? -chunk[i] : chunk[i]);
           end
         end
-        is_dilithium: begin
-          result_o = result_o + scale_chunk_dilithium(chunk[i], i);
-        end
-        is_kyber: begin
-          result_o = result_o + scale_chunk_kyber(chunk[i], i);
-        end
       endcase
     end
   end
 end
-
-// Computes scaled value of `chunk` by (2^13 - 1)^i
-function automatic logic [23*2-1:0] scale_chunk_dilithium (
-    input logic [31:0] chunk,
-    input int unsigned i
-);
-    logic [63:0] tmp;
-    tmp = chunk;
-    for (int j = 0; j < i; j++) begin
-        tmp = (tmp << 13) - tmp;
-    end
-    return tmp;
-endfunction
-
-// Computes scaled value of `chunk` by (2^9 + 2^8 - 1)^i
-function automatic logic [63:0] scale_chunk_kyber (
-    input logic [31:0] chunk,
-    input int unsigned i
-);
-    logic [127:0] tmp;
-    tmp = chunk;
-    for (int j = 0; j < i; j++) begin
-        tmp = (tmp << 9) + (tmp << 8) - tmp;
-    end
-    return tmp;
-endfunction
 
 endmodule : shiftadd_parallel

@@ -11,8 +11,7 @@ module reduction_top (
 
 logic start_delayed;
 
-logic [DATA_LENGTH-1:0] red_reg [2:0];
-logic [DATA_LENGTH-1:0] x_reg   [2:0];
+logic [DATA_LENGTH-1:0] x_reg, red_reg;
 
 shiftreg #(
     .SHIFT(3), // 1 for each delaying cycle
@@ -23,43 +22,29 @@ shiftreg #(
     .data_o(start_delayed)
 );
 
-localparam NUM_RED = 3;
-
-logic [DATA_LENGTH-1:0] x_delayed [NUM_RED-1:0];
-logic [DATA_LENGTH-1:0] res_delayed [NUM_RED-1:0];
-logic finish_delayed [NUM_RED-1:0];
-
-
+//----------------------- Register inputs -> 1 cycle -----------------------
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if(!rst_ni) begin
-    x_delayed[0] <= '0;
-    x_delayed[1] <= '0;
-    x_delayed[2] <= '0;
-  end else begin
-    x_delayed[0] <= x_i;
-    x_delayed[1] <= res_delayed[0];
-    x_delayed[2] <= res_delayed[1];
-  end
+    if(!rst_ni) begin
+      x_reg     <= 0;
+    end else if(start_i) begin
+      x_reg     <= x_i;
+    end
 end
 
-genvar i;
-generate
-  for (i = 0; i < NUM_RED; i++) begin
-    kyber_reduction uut (
-      .x_i      (x_delayed[i]),
-      .m_i      (m_i),
-      .result_o (res_delayed[i])
-    );
-  end
-endgenerate
+//----------------------- dilithium arithmetic -> 1 cycle -----------------------
+reduction dilithium(
+  .x_i          (x_reg),
+  .m_i          (m_i),
+  .result_o     (red_reg)
+);
 
-
+//----------------------- Getting the output -> 1 cycle -----------------------
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 0;
     valid_o  <= 0;
   end else begin
-    result_o <= (res_delayed[NUM_RED-1] > m_i) ? res_delayed[NUM_RED-1] - m_i : res_delayed[NUM_RED-1];
+    result_o <= (red_reg > m_i) ? red_reg - m_i : red_reg;
     valid_o  <= start_delayed;
   end
 end

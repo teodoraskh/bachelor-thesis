@@ -1,3 +1,7 @@
+//==========================================================================
+// Intellectual property of the Cryptographic Engineering Dpt., ISEC, TUGraz
+//==========================================================================
+
 import multiplier_pkg::*;
 
 module multiplier_top (
@@ -113,17 +117,12 @@ endgenerate
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
         always_ff @(posedge clk_i) begin
-            // if (rst_ni == 0) begin
-            //     d_operand_b[i] <= 0;
-            // end 
-            // else if (ctrl_update) begin
                 if (i == 0) begin
                     d_operand_b[i] <= indata_b_i;
                 end
                 else begin
                     d_operand_b[i] <= d_operand_b[i-1];
                 end
-            // end
         end
     end
 endgenerate
@@ -131,17 +130,12 @@ endgenerate
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
         always_ff @(posedge clk_i) begin
-            // if (rst_ni == 0) begin
-            //     d_result[i] <= 0;
-            // end 
-            // else if (ctrl_update) begin
                 if (i == 0) begin
                     d_result[i] <= mul16_res[i];
                 end
                 else begin
                     d_result[i] <= d_result[i-1] + (mul16_res[i] << BLOCK_LENGTH*(i%NUM_BLOCKS + i/NUM_BLOCKS));
                 end
-            // end
         end
     end
 endgenerate
@@ -152,7 +146,6 @@ endgenerate
 
 assign busy_o       = (curr_state != idle && curr_state != finish);
 assign finish_o     = d_finish;
-// assign outdata_r_o  = d_result[1];
 assign outdata_r_o  = d_result[NUM_MULS-1];
 
 endmodule : multiplier_top

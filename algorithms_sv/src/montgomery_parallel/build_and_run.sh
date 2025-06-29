@@ -6,7 +6,9 @@ iverilog -g2012 -I. -o montgomery_bp_tb.vvp \
   ../../utils/multiplier_pkg.sv \
   ../../utils/multiplier_16x16_parallel.sv \
   ../../utils/multiplier_parallel.sv \
+  ../../utils/shiftreg.sv \
   montgomery_bp.sv \
+  montgomery_bp_top.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
 
 vvp montgomery_bp_tb.vvp || { echo "Simulation failed"; exit 1; }

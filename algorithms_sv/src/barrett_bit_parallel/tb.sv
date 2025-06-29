@@ -16,7 +16,7 @@ module barrett_bp_tb;
 
     logic [DATA_LENGTH-1:0]     reference_o;
 
-    barrett_parallel uut (
+    barrett_parallel_top uut (
       .clk_i                  (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),

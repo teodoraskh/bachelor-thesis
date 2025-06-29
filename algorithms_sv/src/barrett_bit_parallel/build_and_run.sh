@@ -8,6 +8,7 @@ iverilog -g2012 -I.. -o barrett_bp_tb.vvp \
   ../../utils/multiplier_parallel.sv \
   ../../utils/shiftreg.sv \
   barrett_bp.sv \
+  barrett_bp_top.sv \
   tb.sv || { echo "Compilation failed"; exit 1; }
 
 vvp barrett_bp_tb.vvp || { echo "Simulation failed"; exit 1; }

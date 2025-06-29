@@ -240,10 +240,4 @@ function automatic logic [63:0] scale_chunk_kyber (
     return tmp;
 endfunction
 
-
-// always_ff @(posedge clk_i) begin
-//     $display("Cycle: %d, State: %s, start_i: %d, res_p: %h",
-//             $time, curr_state.name(), start_i, result_p);
-// end
-
 endmodule : shiftadd_serialized
