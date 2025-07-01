@@ -69,10 +69,10 @@ shiftreg #(
 // LOAD
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
-    x_reg         <= 64'b0;
-    q_reg         <= 64'b0;
-    q_bl_reg      <= 64'b0;
-    mu_reg        <= 64'b0;
+    x_reg         <= 0;
+    q_reg         <= 0;
+    q_bl_reg      <= 0;
+    mu_reg        <= 0;
   end else begin
     x_reg         <= x_i;
     q_reg         <= q_i;
@@ -96,7 +96,7 @@ multiplier_top multiplier_precomp(
 // pipeline register for lsb_rescaled
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    xmu_precomp_reg <= '0;
+    xmu_precomp_reg <= 0;
   end else if (start_delayed[MULTIPLIER_DEPTH + 1]) begin
     xmu_precomp_reg <= xmu_precomp;
   end
@@ -105,7 +105,7 @@ end
 // q <- (x * mu) / 2^2k
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
-    q_approx <= 64'b0;
+    q_approx <= 0;
   end else if (m_finish) begin
     q_approx <= xmu_precomp_reg >> (2 * q_bl_i);
   end else begin
@@ -128,8 +128,10 @@ multiplier_top multiplier_approx(
 // pipeline register for qm_result
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    qm_result_reg <= '0;
+    qm_result_reg <= 0;
   end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 4]) begin
+    qm_result_reg <= qm_result;
+  end else begin
     qm_result_reg <= qm_result;
   end
 end
@@ -137,7 +139,7 @@ end
 // r <- (x - q * M)
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    res_reg <= 64'b0;
+    res_reg <= 0;
   end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
     res_reg <= x_delayed - qm_result_reg;
   end else begin
@@ -148,7 +150,7 @@ end
 // Conditional subtraction
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    result_o <= 64'b0;
+    result_o <= 0;
   end else begin
     result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
   end

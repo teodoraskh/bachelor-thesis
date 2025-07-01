@@ -200,5 +200,4 @@ end
 // assign valid_o  = (curr_state == FINISH);
 // assign result_o = result_n;
 
-
 endmodule : barrett_ds

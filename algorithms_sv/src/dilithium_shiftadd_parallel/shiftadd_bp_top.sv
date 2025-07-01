@@ -20,7 +20,7 @@ logic start_delayed;
 logic clk_i;
 logic [DATA_LENGTH-1:0] m_reg, m_bl_reg;
 
-logic [DATA_LENGTH-1:0] x_delayed [NUM_RED-1:0];
+logic [DATA_LENGTH-1:0] x_delayed   [NUM_RED-1:0];
 logic [DATA_LENGTH-1:0] res_delayed [NUM_RED-1:0];
 logic finish_delayed [NUM_RED-1:0];
 
@@ -75,7 +75,7 @@ end
 genvar i;
 generate
   for (i = 0; i < NUM_RED; i++) begin
-    shiftadd_parallel parallel_module(
+    dilithium_shiftadd_parallel parallel_module(
       .x_i          (x_delayed[i]),
       .m_i          (m_reg),
       .m_bl_i       (m_bl_reg),
