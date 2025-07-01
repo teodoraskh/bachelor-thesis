@@ -1,7 +1,7 @@
-iverilog -E ../../utils/multiplier_pkg.sv \
+iverilog -E -DSIMULATION ../../utils/multiplier_pkg.sv \
             ../../utils/params_pkg.sv || { echo "Package syntax error"; exit 1; }
 
-iverilog -g2012 -I. -o montgomery.vvp \
+iverilog -g2012 -DSIMULATION -I. -o montgomery.vvp \
   ../../utils/multiplier_pkg.sv \
   ../../utils/params_pkg.sv \
   montgomery.sv \

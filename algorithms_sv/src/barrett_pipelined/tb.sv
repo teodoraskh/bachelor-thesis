@@ -7,7 +7,7 @@ module barrett_tb;
     logic                       clk_i;                               // Rising edge active clk.
     logic                       rst_ni;                              // Active low reset.
     logic                       start_i;                             // Start signal.
-    logic                       busy_o;                              // Module busy. 
+    logic                       busy_o;                              // Module busy.
     logic                       finish_o;                            // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input x.
     logic [DATA_LENGTH-1:0]     indata_q_i;                          // Modulus.
@@ -17,10 +17,10 @@ module barrett_tb;
     logic [DATA_LENGTH-1:0]     reference_o [DATA_LENGTH-1:0];       // Finish signal.
 
     barrett_pipelined uut (
-      .clk_i                  (clk_i),              // Rising edge active clk.
+      .CLK_pci_sys_clk_p      (clk_i),              // Rising edge active clk.
       .rst_ni                 (rst_ni),             // Active low reset.
       .start_i                (start_i),            // Start signal.
-      .x_i                    (indata_x),           // Input x. 
+      .x_i                    (indata_x),           // Input x.
       .q_i                    (indata_q_i),         // Modulus.
       .q_bl_i                 (indata_q_bl_i),      // Modulus bitlength.
       .mu_i                   (indata_mu_i),        // Precomputed mu.
@@ -56,7 +56,7 @@ module barrett_tb;
     end
 
     logic [DATA_LENGTH-1:0] indata_x;
-    
+
     assign indata_q_bl_i = MODULUS_LENGTH;
     assign indata_q_i    = MODULUS;
     assign indata_mu_i   = MU;
@@ -117,4 +117,4 @@ module barrett_tb;
       $finish;
     end
 
-endmodule : barrett_tb 
+endmodule : barrett_tb

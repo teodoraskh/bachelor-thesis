@@ -6,7 +6,7 @@ module barrett_bp_tb;
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
     logic                       start_i;         // Start signal.
-    logic                       busy_o;          // Module busy. 
+    logic                       busy_o;          // Module busy.
     logic                       finish_o;        // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
     logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
@@ -17,7 +17,7 @@ module barrett_bp_tb;
     logic [DATA_LENGTH-1:0]     reference_o;
 
     barrett_parallel_top uut (
-      .clk_i                  (clk_i),
+      .CLK_pci_sys_clk_p      (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),
       .x_i                    (indata_x_i),
@@ -70,7 +70,7 @@ module barrett_bp_tb;
         if (indata_x_i != 0) begin
           $display("[%04t] > Input data    : %h", $time, indata_x_i);
           reference_o = indata_x_i % indata_m_i;
-          
+
           @(posedge clk_i);
           start_i = 1;
           @(posedge clk_i);
@@ -97,4 +97,4 @@ module barrett_bp_tb;
     $finish;
 end
 
-endmodule : barrett_bp_tb 
+endmodule : barrett_bp_tb

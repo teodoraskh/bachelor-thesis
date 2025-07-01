@@ -1,6 +1,7 @@
 import multiplier_pkg::*;
 module barrett_ds (
-  input  logic                    clk_i,
+  input  logic                    CLK_pci_sys_clk_p,
+  input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input
@@ -29,10 +30,22 @@ logic ctrl_update_res_with_xmu;
 logic ctrl_update_res_with_qm;
 
 // =======================================================================
-//  It is serialized, in the sense that it uses the 16x16-bit 
-//  serial multiplier. This seemed like the least error-prone approach 
+//  It is serialized, in the sense that it uses the 16x16-bit
+//  serial multiplier. This seemed like the least error-prone approach
 //  given the chained multiplications + the shift.
 // =======================================================================
+
+logic clk_i;
+`ifdef SIMULATION
+    assign clk_i = CLK_pci_sys_clk_p; // Fake the clock in simulation
+`else
+    clk_wiz_0 cw (
+      .clk_in1_p(CLK_pci_sys_clk_p),
+      .clk_in1_n(CLK_pci_sys_clk_n),
+      .clk_out1(clk_i),
+      .reset(~rst_ni)
+    );
+`endif
 
 
 always_comb begin
@@ -49,19 +62,25 @@ always_ff @(posedge clk_i) begin
         q_reg    <= 0;
         q_bl_reg <= 0;
         mu_reg   <= 0;
-    end 
+    end
     else if (ctrl_update_operands) begin
         x_reg    <= x_i;
         q_reg    <= q_i;
         q_bl_reg <= q_bl_i;
         mu_reg   <= mu_i;
     end
+    else begin
+        x_reg    <= x_reg;
+        q_reg    <= q_reg;
+        q_bl_reg <= q_bl_reg;
+        mu_reg   <= mu_reg;
+    end
 end
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
         curr_state <= LOAD;
-    end 
+    end
     else begin
         curr_state <= next_state;
     end
@@ -143,7 +162,7 @@ end
 always_ff @(posedge clk_i) begin
     if (ctrl_update_operands || start_i) begin
         result_p <= 0;
-    end 
+    end
     else if (ctrl_update_res_with_xmu) begin
         result_p <= xmu_precomp >> (2 * q_bl_reg); // Approximation step
     end
@@ -159,7 +178,7 @@ always_ff @(posedge clk_i) begin
   else if (ctrl_adjust_result) begin
     if(result_p >= q_reg) begin
       result_n <= result_p - q_reg;
-    end 
+    end
     else begin
       result_n <= result_p;
     end
@@ -168,9 +187,18 @@ always_ff @(posedge clk_i) begin
   end
 end
 
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    result_o <= 0;
+    valid_o  <= 0;
+  end else begin
+    result_o <= result_n;
+    valid_o  <= (curr_state == FINISH);
+  end
+end
 
-assign valid_o  = (curr_state == FINISH);
-assign result_o = result_n;
+// assign valid_o  = (curr_state == FINISH);
+// assign result_o = result_n;
 
 
 endmodule : barrett_ds

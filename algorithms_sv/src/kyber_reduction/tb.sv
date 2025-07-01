@@ -4,16 +4,16 @@ module kyber_tb;
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
     logic                       start_i;         // Start signal.
-    logic                       busy_o;          // Module busy. 
+    logic                       busy_o;          // Module busy.
     logic                       finish_o;        // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_m_i;     
+    logic [DATA_LENGTH-1:0]     indata_m_i;
     logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 
     logic [DATA_LENGTH-1:0]     reference_o;
 
    reduction_top uut(
-     .clk_i            (clk_i),
+     .CLK_pci_sys_clk_p(clk_i),
      .rst_ni           (rst_ni),
      .start_i          (start_i),
      .x_i              (indata_x_i),
@@ -36,7 +36,7 @@ module kyber_tb;
 
     initial begin
     $display("\n=======================================");
-    $display("[%04t] > Start barrett_bp_tb test", $time);
+    $display("[%04t] > Start kyber test", $time);
     $display("=======================================\n");
 
     clk_i     = 0;
@@ -63,7 +63,7 @@ module kyber_tb;
         if (indata_x_i != 0) begin
           $display("[%04t] > Input data    : %h", $time, indata_x_i);
           reference_o = indata_x_i % indata_m_i;
-          
+
           @(posedge clk_i);
           start_i = 1;
           @(posedge clk_i);
@@ -83,7 +83,7 @@ module kyber_tb;
     end
 
     $display("\n=======================================");
-    $display("[%04t] > Finish barrett_bp_tb test", $time);
+    $display("[%04t] > Finish kyber test", $time);
     $display("=======================================\n");
 
     #100;
@@ -91,4 +91,4 @@ module kyber_tb;
 end
 
 
-endmodule : kyber_tb 
+endmodule : kyber_tb

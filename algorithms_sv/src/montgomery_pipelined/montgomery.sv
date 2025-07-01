@@ -1,6 +1,7 @@
 import multiplier_pkg::*;
 module montgomery_pipelined (
-  input  logic                    clk_i,
+  input  logic                    CLK_pci_sys_clk_p,
+  input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input x.
@@ -18,6 +19,8 @@ logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
 
 logic busy_m_o;
 logic busy_s_o;
+logic clk_i;
+
 logic s_finish, m_finish, d_finish;
 
 logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, res_reg, qinv_reg, m_reg, lsb_reg;
@@ -27,6 +30,17 @@ logic [2 * DATA_LENGTH-1:0] m_rescaled;
 logic [2 * DATA_LENGTH-1:0] m_rescaled_reg;
 logic [2 * DATA_LENGTH-1:0] lsb_rescaled;
 logic [2 * DATA_LENGTH-1:0] lsb_rescaled_reg;
+
+`ifdef SIMULATION
+    assign clk_i = CLK_pci_sys_clk_p; // Fake the clock in simulation
+`else
+    clk_wiz_0 cw (
+      .clk_in1_p(CLK_pci_sys_clk_p),
+      .clk_in1_n(CLK_pci_sys_clk_n),
+      .clk_out1(clk_i),
+      .reset(~rst_ni)
+    );
+`endif
 
 always @(posedge clk_i) begin
     start_delayed[0] <= start_i;

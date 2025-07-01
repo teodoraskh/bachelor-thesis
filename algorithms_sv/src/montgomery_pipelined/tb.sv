@@ -19,7 +19,7 @@ module montgomery_tb;
     logic [DATA_LENGTH-1:0]     reference_o [DATA_LENGTH-1:0];
 
     montgomery_pipelined uut (
-      .clk_i                  (clk_i),
+      .CLK_pci_sys_clk_p      (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),    
       .x_i                    (indata_x_m),   // Input is passed in Montgomery form.

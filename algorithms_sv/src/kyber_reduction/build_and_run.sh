@@ -1,6 +1,6 @@
-iverilog -E ../../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
+iverilog -E -DSIMULATION ../../utils/multiplier_pkg.sv || { echo "Package syntax error"; exit 1; }
 
-iverilog -g2012 -I. -o kyber_tb.vvp \
+iverilog -g2012 -DSIMULATION -I. -o kyber_tb.vvp \
   ../../utils/multiplier_pkg.sv\
   ../../utils/shiftreg.sv\
   reduction.sv \

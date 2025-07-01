@@ -7,7 +7,7 @@ module barrett_ds_tb;
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
     logic                       start_i;         // Start signal.
-    logic                       busy_o;          // Module busy. 
+    logic                       busy_o;          // Module busy.
     logic                       finish_o;        // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
     logic [DATA_LENGTH-1:0]     indata_q_i;      // Input data -> operand b.
@@ -18,15 +18,15 @@ module barrett_ds_tb;
     logic [DATA_LENGTH-1:0]     reference_o;
 
     barrett_ds uut (
-        .clk_i                  (clk_i),
+        .CLK_pci_sys_clk_p      (clk_i),
         .rst_ni                 (rst_ni),
-        .start_i                (start_i),    
+        .start_i                (start_i),
         .x_i                    (indata_x_i),
         .q_i                    (indata_q_i),
         .q_bl_i                 (indata_q_bl_i),
         .mu_i                   (indata_mu_i),
         .result_o               (outdata_r_o),
-        .valid_o                (finish_o)    
+        .valid_o                (finish_o)
     );
 
     initial forever #5 clk_i = ~clk_i;
@@ -100,4 +100,4 @@ module barrett_ds_tb;
     $finish;
 end
 
-endmodule : barrett_ds_tb 
+endmodule : barrett_ds_tb

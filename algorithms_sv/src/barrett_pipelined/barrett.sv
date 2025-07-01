@@ -1,6 +1,7 @@
 import multiplier_pkg::*;
 module barrett_pipelined (
-  input  logic                    clk_i,
+  input  logic                    CLK_pci_sys_clk_p,
+  input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,      // Input x.
@@ -18,6 +19,7 @@ logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
 
 logic busy_p_o;
 logic busy_a_o;
+logic clk_i;
 
 logic m_finish, a_finish, d_finish;
 logic m_finish_delayed;
@@ -30,6 +32,18 @@ logic [2 * DATA_LENGTH-1:0] qm_result;
 logic [2 * DATA_LENGTH-1:0] qm_result_reg;
 logic [2 * DATA_LENGTH-1:0] xmu_precomp;
 logic [2 * DATA_LENGTH-1:0] xmu_precomp_reg;
+
+`ifdef SIMULATION
+    assign clk_i = CLK_pci_sys_clk_p; // Fake the clock in simulation
+`else
+    clk_wiz_0 cw (
+      .clk_in1_p(CLK_pci_sys_clk_p),
+      .clk_in1_n(CLK_pci_sys_clk_n),
+      .clk_out1(clk_i),
+      .reset(~rst_ni)
+    );
+`endif
+
 
 always @(posedge clk_i) begin
     start_delayed[0] <= start_i;
@@ -69,12 +83,12 @@ end
 
 // x * mu
 multiplier_top multiplier_precomp(
-  .clk_i(clk_i),    
+  .clk_i(clk_i),
   .rst_ni(rst_ni),
   .start_i(start_delayed[1]),
   .busy_o(busy_p_o),
   .finish_o(m_finish),
-  .indata_a_i(x_reg),        
+  .indata_a_i(x_reg),
   .indata_b_i(mu_reg),
   .outdata_r_o(xmu_precomp)
 );

@@ -1,26 +1,39 @@
-`timescale 1ns / 1ps
+import multiplier_pkg::*;
 module montgomery_serialized (
-  input  logic                    clk_i,
+  input  logic                    CLK_pci_sys_clk_p,
+  input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input: multiplication result from NTT, already in Montgomery form
-  input  logic [DATA_LENGTH-1:0]  y_i,       
+  input  logic [DATA_LENGTH-1:0]  y_i,
   input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus (e.g., 32-bit)
   input  logic [DATA_LENGTH-1:0]  m_bl_i,
   output logic [DATA_LENGTH-1:0]  result_o,
   output logic                    valid_o    // Result valid flag
 );
 
-localparam DATA_LENGTH = 64;
 typedef enum logic[2:0] {LOAD, REDUCE, FINISH} state_t;
 state_t curr_state, next_state;
 logic [DATA_LENGTH-1:0] S;
 logic [8:0] idx;
+logic clk_i;
+
 
 logic ctrl_reset_operands;
 logic ctrl_update_result;
 logic ctrl_update_x_counter;
 logic ctrl_start_new;
+
+`ifdef SIMULATION
+    assign clk_i = CLK_pci_sys_clk_p; // Fake the clock in simulation
+`else
+    clk_wiz_0 cw (
+      .clk_in1_p(CLK_pci_sys_clk_p),
+      .clk_in1_n(CLK_pci_sys_clk_n),
+      .clk_out1(clk_i),
+      .reset(~rst_ni)
+    );
+`endif
 
 always_comb begin
   ctrl_reset_operands    = (curr_state == LOAD);
@@ -58,7 +71,7 @@ end
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0 || ctrl_reset_operands) begin
         idx <= 0;
-    end 
+    end
     else if (ctrl_update_x_counter) begin
         idx <= idx + 1;
     end
