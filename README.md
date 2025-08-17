@@ -13,10 +13,12 @@ Each of these algorithms has been implemented in System Verilog using different 
 As a proof-of-concept, the Kyber and Dilithium coefficient moduli have been employed in order to both generate the inputs and also for testing.
 
 In the `algorithms` folder, the python test generation can be found. This script produces two "polynomial" vectors drawn from a Gaussian distribution, with degrees between 2^8 and 2^10, multiplies them and eventually reduces the product using one of the algorithms. The resulting array serves as `expected output` for the algorithms implemented in System Verilog. Additionally, the uniformly random generated vectors are used as input for the algorithms.
-To generate expected results, please run the command:
+To generate expected results, please follow the following convention:
 
 ```
-	python main.py <algorithm_name> <modulus_scheme_name>
+  Usage: python main.py <red_alg> <modulus_decimal>
+  Where <red_alg> = all | montgomery | barrett | shiftadd
+  And   <modulus> = kyber | dilithium | other modulus (int)
 ```
 
 The folder `algorithms_sv` contains the implementation for each reduction approach, along with a test file and a testbench. By default, the Dilithium modulus is used. To employ e.g. the Kyber modulus, one has to modify `algorithms_sv/params_pkg.sv`and use the specific modulus. To use any other modulus, one needs to first generate new test results via the python script.
@@ -28,7 +30,7 @@ For simulating, IcarusVerilog v12.0 is required, as well as a wave analyzer, suc
 
 To run the simulation, one needs to simply run:
 ```
-./build_and_run.sh
+  ./build_and_run.sh
 ```
 in the source folder of the algorithm.
 
