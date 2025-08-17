@@ -99,20 +99,14 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni)
-    mask <= 0;
-  else if (ctrl_update_result)
-    mask <= {DATA_LENGTH{S >= m_i}};
-  else
-    mask <= mask;
-end
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 0;
     valid_o  <= 0;
   end else begin
-    result_o <= (ctrl_update_result) ? ((S & ~mask) | ((S - m_i) & mask)) : result_o;
+    if (ctrl_update_result)
+      result_o <= (S >= m_i) ? (S - m_i) : S;
+    else
+      result_o <= result_o;
     valid_o  <= ctrl_update_result;
   end
 end
