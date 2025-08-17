@@ -1,39 +1,31 @@
 import multiplier_pkg::*;
-module barrett_ds (
+module montgomery_ds (
   input  logic                    CLK_pci_sys_clk_p,
   input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]  x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]  q_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]  q_bl_i,    // Modulus bitlength
-  input  logic [DATA_LENGTH-1:0]  mu_i,      // Precomputed mu
-  output logic [DATA_LENGTH-1:0]  result_o,  // Result
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input: the result of the multiplication (in Montgomery form)
+  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,    // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]  minv_i,    // Modular inverse
+  output logic [DATA_LENGTH-1:0]  result_o,  // Result (will be out of Montgomery form)
   output logic                    valid_o    // Result valid flag
 );
 
-typedef enum logic[2:0] {LOAD, PRECOMP, APPROX, REDUCE, FINISH} state_t;
+typedef enum logic[2:0] {LOAD, SCALE_LSB, RESC_IN, REDUCE, FINISH} state_t;
 
 state_t curr_state, next_state;
 logic [2 * DATA_LENGTH-1:0] x_mu;
-logic [DATA_LENGTH-1:0] q_m;
 logic [DATA_LENGTH-1:0] tmp;
-logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, mu_reg;
+logic [DATA_LENGTH-1:0] x_reg, m_reg, m_bl_reg, minv_reg;
 logic [DATA_LENGTH-1:0] result_n, result_p;
-
 
 logic ctrl_update_operands;
 logic ctrl_update_result;
 logic ctrl_adjust_result;
 logic ctrl_clear_regs;
-logic ctrl_update_res_with_xmu;
-logic ctrl_update_res_with_qm;
-
-// =======================================================================
-//  It is serialized, in the sense that it uses the 16x16-bit
-//  serial multiplier. This seemed like the least error-prone approach
-//  given the chained multiplications + the shift.
-// =======================================================================
+logic ctrl_update_res_with_lsb;
+logic ctrl_update_res_with_m_resc;
 
 logic clk_i;
 `ifdef SIMULATION
@@ -49,31 +41,31 @@ logic clk_i;
 
 
 always_comb begin
-  ctrl_update_operands     = (curr_state == LOAD);
-  ctrl_update_res_with_xmu = (curr_state == PRECOMP) && (m_finish == 1);
-  ctrl_update_result       = (curr_state == FINISH);
-  ctrl_update_res_with_qm  = (curr_state == APPROX) && (a_finish == 1);
-  ctrl_adjust_result       = (curr_state == REDUCE);
+  ctrl_update_operands         = (curr_state == LOAD);
+  ctrl_update_res_with_lsb     = (curr_state == SCALE_LSB) && (m_finish == 1);
+  ctrl_update_result           = (curr_state == FINISH);
+  ctrl_update_res_with_m_resc  = (curr_state == RESC_IN) && (a_finish == 1);
+  ctrl_adjust_result           = (curr_state == REDUCE);
 end
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
         x_reg    <= 0;
-        q_reg    <= 0;
-        q_bl_reg <= 0;
-        mu_reg   <= 0;
+        m_reg    <= 0;
+        m_bl_reg <= 0;
+        minv_reg <= 0;
     end
     else if (ctrl_update_operands) begin
         x_reg    <= x_i;
-        q_reg    <= q_i;
-        q_bl_reg <= q_bl_i;
-        mu_reg   <= mu_i;
+        m_reg    <= m_i;
+        m_bl_reg <= m_bl_i;
+        minv_reg <= minv_i;
     end
     else begin
         x_reg    <= x_reg;
-        q_reg    <= q_reg;
-        q_bl_reg <= q_bl_reg;
-        mu_reg   <= mu_reg;
+        m_reg    <= m_reg;
+        m_bl_reg <= m_bl_reg;
+        minv_reg <= minv_reg;
     end
 end
 
@@ -91,14 +83,14 @@ always_comb begin
     case (curr_state)
         LOAD : begin
             if (start_i == 1) begin
-                next_state = PRECOMP;
+                next_state = SCALE_LSB;
             end
         end
-        PRECOMP: begin
+        SCALE_LSB: begin
             if(m_finish)
-              next_state = APPROX;
+              next_state = RESC_IN;
         end
-        APPROX: begin
+        RESC_IN: begin
           if(a_finish)
             next_state = REDUCE;
         end
@@ -119,7 +111,7 @@ always_comb begin
 end
 
 
-logic [2 * DATA_LENGTH-1:0] xmu_precomp;
+logic [2 * DATA_LENGTH-1:0] lsb_scaled;
 logic m_finish;
 logic busy_p_o;
 multiplier_top multiplier_precomp(
@@ -128,9 +120,9 @@ multiplier_top multiplier_precomp(
   .start_i(start_i),          // Start signal.
   .busy_o(busy_p_o),          // Module busy.
   .finish_o(m_finish),        // Module finish.
-  .indata_a_i(x_reg),         // Input data -> operand a.
-  .indata_b_i(mu_reg),         // Input data -> operand a.
-  .outdata_r_o(xmu_precomp)
+  .indata_a_i(x_reg & ((1 << m_bl_reg) - 1)),         // Input data -> operand a.
+  .indata_b_i(minv_reg),      // Input data -> operand a.
+  .outdata_r_o(lsb_scaled)
 );
 
 logic m_finish_d;
@@ -142,16 +134,16 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 logic busy_a_o;
-logic [2 * DATA_LENGTH-1:0] qm_result;
+logic [2 * DATA_LENGTH-1:0] m_rescaled;
 multiplier_top multiplier_approx(
   .clk_i(clk_i),             // Rising edge active clk.
   .rst_ni(rst_ni),           // Active low reset.
-  .start_i(m_finish_d),       // Start signal.
+  .start_i(m_finish_d),        // Start signal.
   .busy_o(busy_a_o),         // Module busy.
   .finish_o(a_finish),       // Module finish.
-  .indata_a_i(result_p),     // Input data -> operand a.
-  .indata_b_i(q_reg),        // Input data -> operand b.
-  .outdata_r_o(qm_result)
+  .indata_a_i(result_p ),     // Input data -> operand a.
+  .indata_b_i(m_reg),        // Input data -> operand b.
+  .outdata_r_o(m_rescaled)
 );
 
 logic adjust_cycle_done;
@@ -171,11 +163,11 @@ always_ff @(posedge clk_i) begin
     if (ctrl_update_operands || start_i) begin
         result_p <= 0;
     end
-    else if (ctrl_update_res_with_xmu) begin
-        result_p <= xmu_precomp >> (2 * q_bl_reg); // Approximation step
+    else if (ctrl_update_res_with_lsb) begin
+        result_p <= lsb_scaled & ((1 << m_bl_reg) - 1); // Approximation step
     end
-    else if (ctrl_update_res_with_qm) begin
-        result_p <= x_reg - qm_result; // Final reduction step
+    else if (ctrl_update_res_with_m_resc) begin
+      result_p <= x_reg + m_rescaled >> m_bl_reg;
     end
 end
 
@@ -184,8 +176,8 @@ always_ff @(posedge clk_i) begin
     result_n <= 64'b0;
   end
   else if (ctrl_adjust_result) begin
-    if(result_p >= q_reg) begin
-      result_n <= result_p - q_reg;
+    if(result_p >= m_reg) begin
+      result_n <= result_p - m_reg;
     end
     else begin
       result_n <= result_p;
@@ -205,4 +197,4 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-endmodule : barrett_ds
+endmodule : montgomery_ds

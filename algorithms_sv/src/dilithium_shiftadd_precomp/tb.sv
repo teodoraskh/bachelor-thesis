@@ -41,7 +41,7 @@ module dilithium_tb;
 
   initial begin
   $display("\n=======================================");
-  $display("[%04t] > Start dilithium test", $time);
+  $display("[%04t] > Start precomputed Dilithium test", $time);
   $display("=======================================\n");
 
   clk_i     = 0;
@@ -88,7 +88,7 @@ module dilithium_tb;
   end
 
   $display("\n=======================================");
-  $display("[%04t] > Finish dilithium test", $time);
+  $display("[%04t] > Finish precomputed Dilithium test", $time);
   $display("=======================================\n");
 
   #100;

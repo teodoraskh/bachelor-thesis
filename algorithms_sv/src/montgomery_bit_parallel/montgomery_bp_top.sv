@@ -1,21 +1,18 @@
 import multiplier_pkg::*;
-
-module montgomery_parallel_top (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+module montgomery_bp_top (
+  input  logic                      CLK_pci_sys_clk_p,
+  input  logic                      CLK_pci_sys_clk_n,
   input  logic                      rst_ni,
   input  logic                      start_i,
-  input  logic [DATA_LENGTH-1:0]    x_i,
-  input  logic [DATA_LENGTH-1:0]    m_i,
-  input  logic [DATA_LENGTH-1:0]    m_bl_i,
-  input  logic [DATA_LENGTH-1:0]    minv_i,
-  output logic [DATA_LENGTH-1:0]    result_o,
-  output logic                      valid_o
+  input  logic [DATA_LENGTH-1:0]    x_i,              // Input: the result of the multiplication (in Montgomery form)
+  input  logic [DATA_LENGTH-1:0]    m_i,              // Modulus
+  input  logic [DATA_LENGTH-1:0]    m_bl_i,           // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]    minv_i,           // Modular inverse
+  output logic [DATA_LENGTH-1:0]    result_o,         // Result (will be out of Montgomery form)
+  output logic                      valid_o           // Valid Flag
 );
+
 logic start_delayed;
-logic clk_i;
-
-
 logic [DATA_LENGTH-1:0] x_reg, m_reg, m_bl_reg, minv_reg, red_reg;
 
 `ifdef SIMULATION
@@ -38,7 +35,6 @@ shiftreg #(
     .data_o(start_delayed)
 );
 
-//----------------------- Register inputs -> 1 cycle -----------------------
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     x_reg     <= 0;
@@ -58,8 +54,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-//----------------------- Montgomery arithmetic -> 1 cycle -----------------------
-montgomery_parallel parallel_module(
+montgomery_bp parallel_module(
   .x_i          (x_reg),
   .m_i          (m_reg),
   .m_bl_i       (m_bl_reg),
@@ -67,7 +62,6 @@ montgomery_parallel parallel_module(
   .result_o     (red_reg)
 );
 
-//----------------------- Getting the output -> 1 cycle -----------------------
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 0;
@@ -78,4 +72,4 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-endmodule : montgomery_parallel_top
+endmodule : montgomery_bp_top

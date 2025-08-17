@@ -1,7 +1,7 @@
 import multiplier_pkg::*;
 module barrett_pipelined (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+  input  logic                    CLK_pci_sys_clk_p, // Clocking wizard positive clock
+  input  logic                    CLK_pci_sys_clk_n, // Clocking wizard negative clock
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,      // Input x.
@@ -15,7 +15,7 @@ localparam MULTIPLIER_DEPTH = NUM_MULS + 2;
 localparam PIPELINE_DEPTH   = MULTIPLIER_DEPTH * 2 + 6;
 
 
-logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
+logic start_delayed [PIPELINE_DEPTH-1:0];
 
 logic busy_p_o;
 logic busy_a_o;

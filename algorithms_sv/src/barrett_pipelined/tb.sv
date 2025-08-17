@@ -63,7 +63,7 @@ module barrett_tb;
 
     initial begin
       $display("\n=======================================");
-      $display("[%04t] > Start barrett precomp test", $time);
+      $display("[%04t] > Start Barrett pipelined test", $time);
       $display("=======================================\n");
 
       clk_i = 0;
@@ -109,7 +109,7 @@ module barrett_tb;
       end
 
       $display("\n=======================================");
-      $display("[%04t] > Finish barrett precomp test", $time);
+      $display("[%04t] > Finish Barrett pipelined test", $time);
       $display("=======================================\n");
 
       // Finish simulation

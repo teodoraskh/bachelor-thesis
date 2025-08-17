@@ -40,7 +40,7 @@ logic [LENGTH*2-1:0] mul16_res [NUM_MULS-1:0];
 
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
-        
+
         assign mul16_a[i] = d_operand_a[i][BLOCK_LENGTH*(i%NUM_BLOCKS)+:BLOCK_LENGTH];
         assign mul16_b[i] = d_operand_b[i][BLOCK_LENGTH*(i/NUM_BLOCKS)+:BLOCK_LENGTH];
 
@@ -64,7 +64,7 @@ end
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
         curr_state <= idle;
-    end 
+    end
     else begin
         curr_state <= next_state;
     end
@@ -99,17 +99,12 @@ end
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
         always_ff @(posedge clk_i) begin
-            // if (rst_ni == 0) begin
-            //     d_operand_a[i] <= 0;
-            // end 
-            // else if (ctrl_update) begin
-                if (i == 0) begin
-                    d_operand_a[i] <= indata_a_i;
-                end
-                else begin
-                    d_operand_a[i] <= d_operand_a[i-1];
-                end
-            // end
+            if (i == 0) begin
+                d_operand_a[i] <= indata_a_i;
+            end
+            else begin
+                d_operand_a[i] <= d_operand_a[i-1];
+            end
         end
     end
 endgenerate
@@ -117,12 +112,12 @@ endgenerate
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
         always_ff @(posedge clk_i) begin
-                if (i == 0) begin
-                    d_operand_b[i] <= indata_b_i;
-                end
-                else begin
-                    d_operand_b[i] <= d_operand_b[i-1];
-                end
+            if (i == 0) begin
+                d_operand_b[i] <= indata_b_i;
+            end
+            else begin
+                d_operand_b[i] <= d_operand_b[i-1];
+            end
         end
     end
 endgenerate
@@ -130,12 +125,12 @@ endgenerate
 generate
     for (genvar i=0; i<NUM_MULS; i++) begin
         always_ff @(posedge clk_i) begin
-                if (i == 0) begin
-                    d_result[i] <= mul16_res[i];
-                end
-                else begin
-                    d_result[i] <= d_result[i-1] + (mul16_res[i] << BLOCK_LENGTH*(i%NUM_BLOCKS + i/NUM_BLOCKS));
-                end
+            if (i == 0) begin
+                d_result[i] <= mul16_res[i];
+            end
+            else begin
+                d_result[i] <= d_result[i-1] + (mul16_res[i] << BLOCK_LENGTH*(i%NUM_BLOCKS + i/NUM_BLOCKS));
+            end
         end
     end
 endgenerate

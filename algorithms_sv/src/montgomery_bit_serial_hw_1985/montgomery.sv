@@ -4,11 +4,11 @@ module montgomery_serialized (
   input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]  x_i,       // Input: multiplication result from NTT, already in Montgomery form
-  input  logic [DATA_LENGTH-1:0]  y_i,
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input in plain form
+  input  logic [DATA_LENGTH-1:0]  y_i,       // Input in Montgomery form
   input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus (e.g., 32-bit)
-  input  logic [DATA_LENGTH-1:0]  m_bl_i,
-  output logic [DATA_LENGTH-1:0]  result_o,
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,    // Modulus bitlength
+  output logic [DATA_LENGTH-1:0]  result_o,  // Result (will be out of Montgomery form)
   output logic                    valid_o    // Result valid flag
 );
 

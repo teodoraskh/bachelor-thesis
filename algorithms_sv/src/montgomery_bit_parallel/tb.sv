@@ -17,16 +17,16 @@ module montgomery_bp_tb;
 
   logic [DATA_LENGTH-1:0]     reference_o;
 
-  montgomery_parallel_top uut (
-      .CLK_pci_sys_clk_p      (clk_i),
-      .rst_ni                 (rst_ni),
-      .start_i                (start_i),
-      .x_i                    (indata_xm_i),
-      .m_i                    (indata_m_i),
-      .minv_i                 (indata_minv_i),
-      .m_bl_i                 (indata_m_bl_i),
-      .result_o               (outdata_r_o),
-      .valid_o                (finish_o)
+  montgomery_bp_top uut (
+    .CLK_pci_sys_clk_p      (clk_i),
+    .rst_ni                 (rst_ni),
+    .start_i                (start_i),
+    .x_i                    (indata_xm_i),
+    .m_i                    (indata_m_i),
+    .minv_i                 (indata_minv_i),
+    .m_bl_i                 (indata_m_bl_i),
+    .result_o               (outdata_r_o),
+    .valid_o                (finish_o)
     );
 
   initial forever #5 clk_i = ~clk_i;
@@ -45,7 +45,7 @@ module montgomery_bp_tb;
   // Stimulus generation
   initial begin
   $display("\n=======================================");
-  $display("[%04t] > Start montgomery_bp_tb test", $time);
+  $display("[%04t] > Start Montgomery bit-parallel test", $time);
   $display("=======================================\n");
 
   clk_i     = 0;
@@ -92,7 +92,7 @@ module montgomery_bp_tb;
   end
 
   $display("\n=======================================");
-  $display("[%04t] > Finish montgomery_bp_tb test", $time);
+  $display("[%04t] > Finish Montgomery bit-parallel test", $time);
   $display("=======================================\n");
 
   #100;

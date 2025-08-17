@@ -9,21 +9,21 @@ module montgomery_tb;
     logic                       busy_o;          // Module busy.
     logic                       finish_o;        // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i;      // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_y_mont_i; // Input data -> operand a.
-    logic [DATA_LENGTH-1:0]     indata_y_i;
+    logic [DATA_LENGTH-1:0]     indata_xm_i;     // Input data -> operand a.
     logic [DATA_LENGTH-1:0]     indata_m_i;      // Input data -> operand b.
+    logic [DATA_LENGTH-1:0]     indata_minv_i;   // Modular inverse
     logic [DATA_LENGTH-1:0]     indata_m_bl_i;
     logic [DATA_LENGTH-1:0]     outdata_r_o;     // Output data -> result a*b.
 
     logic [DATA_LENGTH-1:0]     reference_o;
 
-    montgomery_serialized uut (
+    montgomery_ds uut (
         .CLK_pci_sys_clk_p    (clk_i),
         .rst_ni   (rst_ni),
         .start_i  (start_i),
-        .x_i      (indata_x_i),
-        .y_i      (indata_y_mont_i),
+        .x_i      (indata_xm_i),
         .m_i      (indata_m_i),
+        .minv_i   (indata_minv_i),
         .m_bl_i   (indata_m_bl_i),
         .result_o (outdata_r_o),
         .valid_o  (finish_o)
@@ -40,17 +40,18 @@ module montgomery_tb;
 
     assign indata_m_bl_i = MODULUS_LENGTH;
     assign indata_m_i    = MODULUS;
+    assign indata_minv_i = MOD_INV;
 
     initial begin
         $display("\n=======================================");
-        $display("[%04t] > Start montgomery test", $time);
+        $display("[%04t] > Start Montgomery digit-serial test", $time);
         $display("=======================================\n");
 
         clk_i = 0;
         rst_ni = 0;
         start_i = 0;
 
-        inp_file = $fopen("input_dilithium_mont.txt", "r");
+        inp_file = $fopen("dilithium_input.txt", "r");
         if (inp_file == 0) begin
             $display("ERROR: Failed to open file.");
             $finish;
@@ -66,16 +67,13 @@ module montgomery_tb;
 
         while (!$feof(inp_file)) begin
 
-          // Get A, B and B in Montgomery form
-          $fscanf(inp_file, "%h %h %h", indata_x_i, indata_y_i, indata_y_mont_i);
+          // Get x in Montgomery form
+          $fscanf(inp_file, "%h %h", indata_x_i, indata_xm_i);
 
           if(indata_x_i != 0) begin
-            reference_o = (indata_x_i * indata_y_i) % indata_m_i;
-            start_i = 1;
+            reference_o = indata_x_i % indata_m_i;
 
-            $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
-            // $display("[%04t] > Set indata_y_i: %h", $time, indata_y_i);
-            $display("[%04t] > Set indata_y_i: %h", $time, indata_y_mont_i);
+            $display("[%04t] > Set indata_x_i: %h", $time, indata_xm_i);
 
             @(posedge clk_i);
             start_i = 1;
@@ -96,11 +94,11 @@ module montgomery_tb;
           end
         end
 
-        $display("\n=======================================");
-        $display("[%04t] > Finish montgomery test", $time);
-        $display("=======================================\n");
+        $display("\n===========================================");
+        $display("[%04t] > Finish Montgomery digit-serial test", $time);
+        $display("=============================================\n");
 
-        #10;
+        #100;
         $display("[%0t] > Calling $finish", $time);
         $finish;
     end

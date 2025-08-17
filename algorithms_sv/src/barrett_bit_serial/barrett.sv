@@ -1,26 +1,30 @@
 import multiplier_pkg::*;
-module barrett_ds (
+module barrett_bs (
   input  logic                    CLK_pci_sys_clk_p,
   input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input
-  input  logic [DATA_LENGTH-1:0]  q_i,       // Modulus
-  input  logic [DATA_LENGTH-1:0]  q_bl_i,    // Modulus bitlength
-  input  logic [DATA_LENGTH-1:0]  mu_i,      // Precomputed mu
+  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus
+  input  logic [DATA_LENGTH-1:0]  m_bl_i,    // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]  mu_i,      // Modular inverse
   output logic [DATA_LENGTH-1:0]  result_o,  // Result
   output logic                    valid_o    // Result valid flag
 );
 
 typedef enum logic[2:0] {LOAD, PRECOMP, APPROX, REDUCE, FINISH} state_t;
 
+logic m_finish_d;
+logic busy_a_o;
+logic [2 * DATA_LENGTH-1:0] qm_result;
 state_t curr_state, next_state;
 logic [2 * DATA_LENGTH-1:0] x_mu;
-logic [DATA_LENGTH-1:0] q_m;
+logic [2 * DATA_LENGTH-1:0] xmu_precomp;
+logic m_finish;
+logic busy_p_o;
 logic [DATA_LENGTH-1:0] tmp;
 logic [DATA_LENGTH-1:0] x_reg, q_reg, q_bl_reg, mu_reg;
 logic [DATA_LENGTH-1:0] result_n, result_p;
-
 
 logic ctrl_update_operands;
 logic ctrl_update_result;
@@ -28,12 +32,6 @@ logic ctrl_adjust_result;
 logic ctrl_clear_regs;
 logic ctrl_update_res_with_xmu;
 logic ctrl_update_res_with_qm;
-
-// =======================================================================
-//  It is serialized, in the sense that it uses the 16x16-bit
-//  serial multiplier. This seemed like the least error-prone approach
-//  given the chained multiplications + the shift.
-// =======================================================================
 
 logic clk_i;
 `ifdef SIMULATION
@@ -47,33 +45,30 @@ logic clk_i;
     );
 `endif
 
-
 always_comb begin
-  ctrl_update_operands     = (curr_state == LOAD);
-  ctrl_update_res_with_xmu = (curr_state == PRECOMP) && (m_finish == 1);
-  ctrl_update_result       = (curr_state == FINISH);
-  ctrl_update_res_with_qm  = (curr_state == APPROX) && (a_finish == 1);
-  ctrl_adjust_result       = (curr_state == REDUCE);
+  ctrl_update_operands         = (curr_state == LOAD);
+  ctrl_update_res_with_xmu     = (curr_state == PRECOMP) && (m_finish == 1);
+  ctrl_update_result           = (curr_state == FINISH);
+  ctrl_update_res_with_qm      = (curr_state == APPROX) && (a_finish == 1);
+  ctrl_adjust_result           = (curr_state == REDUCE);
 end
 
 always_ff @(posedge clk_i) begin
     if (rst_ni == 0) begin
-        x_reg    <= 0;
-        q_reg    <= 0;
-        q_bl_reg <= 0;
-        mu_reg   <= 0;
-    end
-    else if (ctrl_update_operands) begin
-        x_reg    <= x_i;
-        q_reg    <= q_i;
-        q_bl_reg <= q_bl_i;
-        mu_reg   <= mu_i;
-    end
-    else begin
-        x_reg    <= x_reg;
-        q_reg    <= q_reg;
-        q_bl_reg <= q_bl_reg;
-        mu_reg   <= mu_reg;
+      x_reg    <= 0;
+      q_reg    <= 0;
+      q_bl_reg <= 0;
+      mu_reg   <= 0;
+    end else if (ctrl_update_operands) begin
+      x_reg    <= x_i;
+      q_reg    <= m_i;
+      q_bl_reg <= m_bl_i;
+      mu_reg   <= mu_i;
+    end else begin
+      x_reg    <= x_reg;
+      q_reg    <= q_reg;
+      q_bl_reg <= q_bl_reg;
+      mu_reg   <= mu_reg;
     end
 end
 
@@ -118,40 +113,26 @@ always_comb begin
     endcase
 end
 
-
-logic [2 * DATA_LENGTH-1:0] xmu_precomp;
-logic m_finish;
-logic busy_p_o;
-multiplier_top multiplier_precomp(
+multiplier_bs multiplier_precomp(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
   .start_i(start_i),          // Start signal.
   .busy_o(busy_p_o),          // Module busy.
   .finish_o(m_finish),        // Module finish.
   .indata_a_i(x_reg),         // Input data -> operand a.
-  .indata_b_i(mu_reg),         // Input data -> operand a.
-  .outdata_r_o(xmu_precomp)
+  .indata_b_i(mu_reg),      // Input data -> operand a.
+  .result_o(xmu_precomp)
 );
 
-logic m_finish_d;
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni)
-    m_finish_d <= 0;
-  else
-    m_finish_d <= m_finish;
-end
-
-logic busy_a_o;
-logic [2 * DATA_LENGTH-1:0] qm_result;
-multiplier_top multiplier_approx(
+multiplier_bs multiplier_approx(
   .clk_i(clk_i),             // Rising edge active clk.
   .rst_ni(rst_ni),           // Active low reset.
-  .start_i(m_finish_d),       // Start signal.
+  .start_i(m_finish_d),        // Start signal.
   .busy_o(busy_a_o),         // Module busy.
   .finish_o(a_finish),       // Module finish.
-  .indata_a_i(result_p),     // Input data -> operand a.
+  .indata_a_i(result_p),    // Input data -> operand a.
   .indata_b_i(q_reg),        // Input data -> operand b.
-  .outdata_r_o(qm_result)
+  .result_o(qm_result)
 );
 
 logic adjust_cycle_done;
@@ -177,6 +158,14 @@ always_ff @(posedge clk_i) begin
     else if (ctrl_update_res_with_qm) begin
         result_p <= x_reg - qm_result; // Final reduction step
     end
+end
+
+// delays m_finish by 1 cc
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni)
+    m_finish_d <= 0;
+  else
+    m_finish_d <= m_finish;
 end
 
 always_ff @(posedge clk_i) begin
@@ -205,4 +194,4 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-endmodule : barrett_ds
+endmodule : barrett_bs

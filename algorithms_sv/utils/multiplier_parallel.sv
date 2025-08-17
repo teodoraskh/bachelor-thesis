@@ -1,4 +1,7 @@
 import multiplier_pkg::*;
+(* keep_hierarchy = "yes" *)
+// (* use_dsp = "yes" *)
+
 
 module multiplier_top (
     input  logic [DATA_LENGTH-1:0]      indata_a_i,      // Input data -> operand a.
@@ -12,7 +15,7 @@ logic [LENGTH*2-1:0] mul16_res [NUM_MULS-1:0];
 
 generate
   for (genvar i=0; i<NUM_MULS; i++) begin
-      
+
     assign mul16_a[i] = indata_a_i[BLOCK_LENGTH*(i%NUM_BLOCKS)+:BLOCK_LENGTH];
     assign mul16_b[i] = indata_b_i[BLOCK_LENGTH*(i/NUM_BLOCKS)+:BLOCK_LENGTH];
 

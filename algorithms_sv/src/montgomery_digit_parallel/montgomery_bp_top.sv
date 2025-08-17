@@ -1,18 +1,22 @@
 import multiplier_pkg::*;
-module reduction_top (
+
+module montgomery_parallel_top (
   input  logic                    CLK_pci_sys_clk_p,
   input  logic                    CLK_pci_sys_clk_n,
-  input  logic                    rst_ni,
-  input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]  x_i,       // Input (e.g., 64-bit)
-  input  logic [DATA_LENGTH-1:0]  m_i,       // Modulus (e.g., 32-bit)
-  output logic [DATA_LENGTH-1:0]  result_o,  // Result register
-  output logic                    valid_o    // Result valid flag
+  input  logic                      rst_ni,
+  input  logic                      start_i,
+  input  logic [DATA_LENGTH-1:0]    x_i,          // Input: the result of the multiplication (in Montgomery form)
+  input  logic [DATA_LENGTH-1:0]    m_i,          // Modulus
+  input  logic [DATA_LENGTH-1:0]    m_bl_i,       // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]    minv_i,       // Modular inverse
+  output logic [DATA_LENGTH-1:0]    result_o,     // Result (will be out of Montgomery form)
+  output logic                      valid_o       // Valid signal
 );
-
 logic start_delayed;
 logic clk_i;
-logic [DATA_LENGTH-1:0] x_reg, red_reg;
+
+
+logic [DATA_LENGTH-1:0] x_reg, m_reg, m_bl_reg, minv_reg, red_reg;
 
 `ifdef SIMULATION
     assign clk_i = CLK_pci_sys_clk_p; // Fake the clock in simulation
@@ -38,17 +42,28 @@ shiftreg #(
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     x_reg     <= 0;
+    m_reg     <= 0;
+    m_bl_reg  <= 0;
+    minv_reg  <= 0;
   end else if(start_i) begin
     x_reg     <= x_i;
+    m_reg     <= m_i;
+    m_bl_reg  <= m_bl_i;
+    minv_reg  <= minv_i;
   end else begin
     x_reg     <= x_reg;
+    m_reg     <= m_reg;
+    m_bl_reg  <= m_bl_reg;
+    minv_reg  <= minv_reg;
   end
 end
 
-//----------------------- dilithium arithmetic -> 1 cycle -----------------------
-reduction dilithium(
+//----------------------- Montgomery arithmetic -> 1 cycle -----------------------
+montgomery_parallel parallel_module(
   .x_i          (x_reg),
-  .m_i          (m_i),
+  .m_i          (m_reg),
+  .m_bl_i       (m_bl_reg),
+  .minv_i       (minv_reg),
   .result_o     (red_reg)
 );
 
@@ -58,9 +73,9 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     result_o <= 0;
     valid_o  <= 0;
   end else begin
-    result_o <= (red_reg > m_i) ? red_reg - m_i : red_reg;
+    result_o <= red_reg;
     valid_o  <= start_delayed;
   end
 end
 
-endmodule : reduction_top
+endmodule : montgomery_parallel_top

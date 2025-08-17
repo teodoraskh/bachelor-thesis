@@ -7,7 +7,7 @@ module montgomery_tb;
     logic                       clk_i;                               // Rising edge active clk.
     logic                       rst_ni;                              // Active low reset.
     logic                       start_i;                             // Start signal.
-    logic                       busy_o;                              // Module busy. 
+    logic                       busy_o;                              // Module busy.
     logic                       finish_o;                            // Module finish.
     logic [DATA_LENGTH-1:0]     indata_x_i   [DATA_LENGTH-1:0];      // Input data x.
     logic [DATA_LENGTH-1:0]     indata_x_m_i [DATA_LENGTH-1:0];      // Input data x in Montgomery form.
@@ -21,13 +21,13 @@ module montgomery_tb;
     montgomery_pipelined uut (
       .CLK_pci_sys_clk_p      (clk_i),
       .rst_ni                 (rst_ni),
-      .start_i                (start_i),    
+      .start_i                (start_i),
       .x_i                    (indata_x_m),   // Input is passed in Montgomery form.
       .q_i                    (indata_q_i),
       .q_bl_i                 (indata_q_bl_i),
       .qinv_i                 (indata_qinv_i),
       .result_o               (outdata_r_o),
-      .valid_o                (finish_o)    
+      .valid_o                (finish_o)
     );
 
     initial forever #5 clk_i = ~clk_i;
@@ -63,12 +63,12 @@ module montgomery_tb;
 
     assign indata_q_bl_i = MODULUS_LENGTH;
     assign indata_q_i    = MODULUS;
-    assign indata_qinv_i = MOD_INV;     
-  
+    assign indata_qinv_i = MOD_INV;
+
     initial begin
-      $display("\n=======================================");
-      $display("[%04t] > Start montgomery test", $time);
-      $display("=======================================\n");
+      $display("\n========================================");
+      $display("[%04t] > Start Montgomery pipelined test", $time);
+      $display("==========================================\n");
 
       clk_i = 0;
       rst_ni = 1;
@@ -112,12 +112,12 @@ module montgomery_tb;
         #1;
       end
 
-      $display("\n=======================================");
-      $display("[%04t] > Finish montgomery test", $time);
-      $display("=======================================\n");
+      $display("\n========================================");
+      $display("[%04t] > Finish Montgomery pipelined test", $time);
+      $display("=========================================\n");
 
       #100;
       $finish;
     end
 
-endmodule : montgomery_tb 
+endmodule : montgomery_tb

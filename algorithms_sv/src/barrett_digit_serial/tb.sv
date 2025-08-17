@@ -41,7 +41,7 @@ module barrett_ds_tb;
 
     initial begin
     $display("\n=======================================");
-    $display("[%04t] > Start barrett_ds_tb test", $time);
+    $display("[%04t] > Start Barrett digit-serial test", $time);
     $display("=======================================\n");
 
     clk_i     = 0;
@@ -93,7 +93,7 @@ module barrett_ds_tb;
     end
 
     $display("\n=======================================");
-    $display("[%04t] > Finish barrett_ds_tb test", $time);
+    $display("[%04t] > Finish Barrett digit-serial test", $time);
     $display("=======================================\n");
 
     #100;

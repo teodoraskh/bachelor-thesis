@@ -4,18 +4,17 @@ module montgomery_pipelined (
   input  logic                    CLK_pci_sys_clk_n,
   input  logic                    rst_ni,
   input  logic                    start_i,
-  input  logic [DATA_LENGTH-1:0]  x_i,       // Input x.
+  input  logic [DATA_LENGTH-1:0]  x_i,       // Input: the result of the multiplication (in Montgomery form)
   input  logic [DATA_LENGTH-1:0]  q_i,       // Modulus.
   input  logic [DATA_LENGTH-1:0]  q_bl_i,    // Modulus bitlength.
   input  logic [DATA_LENGTH-1:0]  qinv_i,    // Modular inverse.
-  output logic [DATA_LENGTH-1:0]  result_o,  // Result.
+  output logic [DATA_LENGTH-1:0]  result_o,  // Result (will be out of Montgomery form)
   output logic                    valid_o    // Result valid flag.
 );
 localparam MULTIPLIER_DEPTH = NUM_MULS + 2;
 localparam PIPELINE_DEPTH   = MULTIPLIER_DEPTH * 2 + 7;
 
-
-logic [1:0] start_delayed [PIPELINE_DEPTH-1:0];
+logic start_delayed [PIPELINE_DEPTH-1:0];
 
 logic busy_m_o;
 logic busy_s_o;
@@ -90,7 +89,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 // (x mod R) * Q'
-multiplier_top multiplier_precomp(
+multiplier_top multiplier_scale_lsb(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
   .start_i(start_delayed[2]), // Start signal.
@@ -122,7 +121,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 // m * Q
-multiplier_top multiplier_approx(
+multiplier_top multiplier_rescale_input(
   .clk_i(clk_i),                       // Rising edge active clk.
   .rst_ni(rst_ni),                     // Active low reset.
   .start_i(start_delayed[MULTIPLIER_DEPTH + 4]),// Start signal.

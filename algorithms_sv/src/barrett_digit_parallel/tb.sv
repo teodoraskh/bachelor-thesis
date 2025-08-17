@@ -2,7 +2,7 @@
 import multiplier_pkg::*;
 import params_pkg::*;
 
-module barrett_bp_tb;
+module barrett_dp_tb;
     logic                       clk_i;           // Rising edge active clk.
     logic                       rst_ni;          // Active low reset.
     logic                       start_i;         // Start signal.
@@ -16,7 +16,7 @@ module barrett_bp_tb;
 
     logic [DATA_LENGTH-1:0]     reference_o;
 
-    barrett_bp_top uut (
+    barrett_parallel_top uut (
       .CLK_pci_sys_clk_p      (clk_i),
       .rst_ni                 (rst_ni),
       .start_i                (start_i),
@@ -31,8 +31,8 @@ module barrett_bp_tb;
     initial forever #5 clk_i = ~clk_i;
 
     initial begin
-        $dumpfile("barrett_bp_tb.vcd");
-        $dumpvars(0, barrett_bp_tb);
+        $dumpfile("barrett_dp_tb.vcd");
+        $dumpvars(0, barrett_dp_tb);
     end
 
     integer inp_file;
@@ -43,7 +43,7 @@ module barrett_bp_tb;
 
     initial begin
     $display("\n=======================================");
-    $display("[%04t] > Start Barrett bit-parallel test", $time);
+    $display("[%04t] > Start Barrett digit-parallel test", $time);
     $display("=======================================\n");
 
     clk_i     = 0;
@@ -90,11 +90,11 @@ module barrett_bp_tb;
     end
 
     $display("\n=======================================");
-    $display("[%04t] > Finish Barrett bit-parallel test", $time);
+    $display("[%04t] > Finish Barrett digit-parallel test", $time);
     $display("=======================================\n");
 
     #100;
     $finish;
 end
 
-endmodule : barrett_bp_tb
+endmodule : barrett_dp_tb

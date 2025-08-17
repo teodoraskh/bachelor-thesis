@@ -1,15 +1,15 @@
 import multiplier_pkg::*;
-module barrett_bp_top (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+module barrett_parallel_top (
+  input  logic                    CLK_pci_sys_clk_p, // Clocking wizard positive clock
+  input  logic                    CLK_pci_sys_clk_n, // Clocking wizard negative clock
   input  logic                      rst_ni,
   input  logic                      start_i,
-  input  logic [DATA_LENGTH-1:0]    x_i,
-  input  logic [DATA_LENGTH-1:0]    m_i,
-  input  logic [DATA_LENGTH-1:0]    m_bl_i,
-  input  logic [DATA_LENGTH-1:0]    mu_i,
-  output logic [DATA_LENGTH-1:0]    result_o,
-  output  logic                     valid_o
+  input  logic [DATA_LENGTH-1:0]    x_i,             // Input
+  input  logic [DATA_LENGTH-1:0]    m_i,             // Modulus
+  input  logic [DATA_LENGTH-1:0]    m_bl_i,          // Modulus bitlength
+  input  logic [DATA_LENGTH-1:0]    mu_i,            // Precomputed constant mu
+  output logic [DATA_LENGTH-1:0]    result_o,        // Result
+  output  logic                     valid_o          // Finish signal
 );
 
 logic start_delayed;
@@ -56,7 +56,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
 end
 
 //----------------------- Barrett arithmetic -> 1 cycle -----------------------
-barrett_bp parallel_module(
+barrett_parallel parallel_module(
   .x_i          (x_reg),
   .m_i          (m_i),
   .m_bl_i       (m_bl_i),
@@ -75,4 +75,4 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
   end
 end
 
-endmodule : barrett_bp_top
+endmodule : barrett_parallel_top
