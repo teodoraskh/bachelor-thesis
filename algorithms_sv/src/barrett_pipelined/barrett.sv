@@ -98,7 +98,7 @@ multiplier_top multiplier_precomp(
   .outdata_r_o(xmu_precomp)
 );
 
-// pipeline register for lsb_rescaled
+// pipeline register for xmu_precomp
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     xmu_precomp_reg <= 0;
