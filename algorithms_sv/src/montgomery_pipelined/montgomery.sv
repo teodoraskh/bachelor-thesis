@@ -69,12 +69,18 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     q_reg         <= 64'b0;
     q_bl_reg      <= 64'b0;
     qinv_reg      <= 64'b0;
-  end else begin
+  end else if (start_i) begin
     x_reg         <= x_i;
     q_reg         <= q_i;
     q_bl_reg      <= q_bl_i;
     qinv_reg      <= qinv_i;
+  end else begin
+    x_reg         <= x_reg;
+    q_reg         <= q_reg;
+    q_bl_reg      <= q_bl_reg;
+    qinv_reg      <= qinv_reg;
   end
+
 end
 
 // x mod R
@@ -92,7 +98,7 @@ end
 multiplier_top multiplier_scale_lsb(
   .clk_i(clk_i),              // Rising edge active clk.
   .rst_ni(rst_ni),            // Active low reset.
-  .start_i(start_delayed[2]), // Start signal.
+  .start_i(start_delayed[1]), // Start signal.
   .busy_o(busy_s_o),          // Module busy.
   .finish_o(s_finish),        // Module finish.
   .indata_a_i(lsb_reg),       // Input data -> operand a.
@@ -103,17 +109,20 @@ multiplier_top multiplier_scale_lsb(
 // pipeline register for lsb_rescaled
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
-    lsb_rescaled_reg <= '0;
-  end else if (start_delayed[MULTIPLIER_DEPTH + 2]) begin
+    lsb_rescaled_reg <= 0;
+  end else if (start_delayed[MULTIPLIER_DEPTH + 1]) begin
     lsb_rescaled_reg <= lsb_rescaled;
   end
 end
+
+logic smth1;
+assign smth1 = start_delayed[MULTIPLIER_DEPTH + 1];
 
 // m <- (x mod R) * Q' mod R
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     m_reg <= 64'b0;
-  end else if(start_delayed[MULTIPLIER_DEPTH + 3])begin
+  end else if(start_delayed[MULTIPLIER_DEPTH + 2])begin
     m_reg <= lsb_rescaled_reg & ((1 << q_bl_reg) - 1);
   end else begin
     m_reg <= m_reg;
@@ -124,7 +133,7 @@ end
 multiplier_top multiplier_rescale_input(
   .clk_i(clk_i),                       // Rising edge active clk.
   .rst_ni(rst_ni),                     // Active low reset.
-  .start_i(start_delayed[MULTIPLIER_DEPTH + 4]),// Start signal.
+  .start_i(start_delayed[MULTIPLIER_DEPTH + 3]),// Start signal.
   .busy_o(busy_m_o),                   // Module busy.
   .finish_o(m_finish),                 // Module finish.
   .indata_a_i(m_reg),                  // Input data -> operand a.
@@ -136,7 +145,7 @@ multiplier_top multiplier_rescale_input(
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     m_rescaled_reg <= '0;
-  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
+  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 3]) begin
     m_rescaled_reg <= m_rescaled;
   end
 end
@@ -145,7 +154,7 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     res_reg <= 64'b0;
-  end else if(start_delayed[MULTIPLIER_DEPTH * 2 + 6])begin
+  end else if(start_delayed[MULTIPLIER_DEPTH * 2 + 4])begin
     res_reg <= (x_delayed + m_rescaled_reg) >> q_bl_reg;
   end else begin
     res_reg <= res_reg;
@@ -156,8 +165,10 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 64'b0;
-  end else begin
+  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
     result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
+  end else begin
+    result_o <= result_o;
   end
 end
 

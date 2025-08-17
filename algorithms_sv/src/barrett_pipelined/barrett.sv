@@ -73,11 +73,16 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     q_reg         <= 0;
     q_bl_reg      <= 0;
     mu_reg        <= 0;
-  end else begin
+  end else if (start_i) begin
     x_reg         <= x_i;
     q_reg         <= q_i;
     q_bl_reg      <= q_bl_i;
     mu_reg        <= mu_i;
+  end else begin
+    x_reg         <= x_reg;
+    q_reg         <= q_reg;
+    q_bl_reg      <= q_bl_reg;
+    mu_reg        <= mu_reg;
   end
 end
 
@@ -85,7 +90,7 @@ end
 multiplier_top multiplier_precomp(
   .clk_i(clk_i),
   .rst_ni(rst_ni),
-  .start_i(start_delayed[1]),
+  .start_i(start_delayed[0]),
   .busy_o(busy_p_o),
   .finish_o(m_finish),
   .indata_a_i(x_reg),
@@ -97,7 +102,7 @@ multiplier_top multiplier_precomp(
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     xmu_precomp_reg <= 0;
-  end else if (start_delayed[MULTIPLIER_DEPTH + 1]) begin
+  end else if (start_delayed[MULTIPLIER_DEPTH]) begin
     xmu_precomp_reg <= xmu_precomp;
   end
 end
@@ -106,7 +111,7 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if(!rst_ni) begin
     q_approx <= 0;
-  end else if (m_finish) begin
+  end else if (start_delayed[MULTIPLIER_DEPTH + 1]) begin
     q_approx <= xmu_precomp_reg >> (2 * q_bl_i);
   end else begin
     q_approx <= q_approx;
@@ -117,7 +122,7 @@ end
 multiplier_top multiplier_approx(
   .clk_i(clk_i),               // Rising edge active clk.
   .rst_ni(rst_ni),             // Active low reset.
-  .start_i(start_delayed[MULTIPLIER_DEPTH + 3]),  // Start signal.
+  .start_i(start_delayed[MULTIPLIER_DEPTH + 2]),  // Start signal.
   .busy_o(busy_a_o),           // Module busy.
   .finish_o(a_finish),         // Module finish.
   .indata_a_i(q_approx),       // Input data -> operand a.
@@ -129,10 +134,10 @@ multiplier_top multiplier_approx(
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     qm_result_reg <= 0;
-  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 4]) begin
+  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 2]) begin
     qm_result_reg <= qm_result;
   end else begin
-    qm_result_reg <= qm_result;
+    qm_result_reg <= qm_result_reg;
   end
 end
 
@@ -140,7 +145,7 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     res_reg <= 0;
-  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
+  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 3]) begin
     res_reg <= x_delayed - qm_result_reg;
   end else begin
     res_reg <= res_reg;
@@ -151,7 +156,7 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 0;
-  end else begin
+    end else begin
     result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
   end
 end
