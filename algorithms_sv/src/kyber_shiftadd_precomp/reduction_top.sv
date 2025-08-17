@@ -1,7 +1,7 @@
 import multiplier_pkg::*;
 module reduction_top (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+  input  logic                    CLK_pci_sys_clk_p, // Clocking wizard positive clock
+  input  logic                    CLK_pci_sys_clk_n, // Clocking wizard negative clock
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input (e.g., 64-bit)

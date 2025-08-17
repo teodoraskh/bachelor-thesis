@@ -58,7 +58,7 @@ generate
 endgenerate
 
 shiftreg #(
-    .SHIFT((NUM_MULS + 2) * 2 + 4), // 2 * multiplier latency + 5 (5 because we need x_i 4 stages later)
+    .SHIFT((NUM_MULS + 2) * 2 + 4), // 2 * multiplier latency + 4 (4 because we need x_i 4 stages later)
     .DATA(64)
 ) shift_in (
     .clk_i(clk_i),
@@ -104,6 +104,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     xmu_precomp_reg <= 0;
   end else if (start_delayed[MULTIPLIER_DEPTH]) begin
     xmu_precomp_reg <= xmu_precomp;
+  end else begin
+    xmu_precomp_reg <= xmu_precomp_reg;
   end
 end
 

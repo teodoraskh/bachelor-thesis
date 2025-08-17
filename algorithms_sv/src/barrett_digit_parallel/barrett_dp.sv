@@ -18,7 +18,6 @@ multiplier_top multiplier_precomp(
   .indata_b_i(mu_i),          // Input data -> operand a.
   .outdata_r_o(xmu_precomp)
 );
-// assign xmu_precomp = x_i * mu_i;
 
 assign q_approx = xmu_precomp >> (2 * m_bl_i);
 
@@ -27,7 +26,6 @@ multiplier_top multiplier_approx(
   .indata_b_i(m_i),          // Input data -> operand b.
   .outdata_r_o(qm_result)
 );
-// assign qm_result = q_approx * m_i;
 
 assign res_reg = x_i - qm_result;
 assign result_o = (res_reg >= m_i) ? (res_reg - m_i) : res_reg;

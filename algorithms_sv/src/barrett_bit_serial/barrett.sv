@@ -1,7 +1,7 @@
 import multiplier_pkg::*;
 module barrett_bs (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+  input  logic                    CLK_pci_sys_clk_p, // Clocking wizard positive clock
+  input  logic                    CLK_pci_sys_clk_n, // Clocking wizard negative clock
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input
@@ -120,17 +120,17 @@ multiplier_bs multiplier_precomp(
   .busy_o(busy_p_o),          // Module busy.
   .finish_o(m_finish),        // Module finish.
   .indata_a_i(x_reg),         // Input data -> operand a.
-  .indata_b_i(mu_reg),      // Input data -> operand a.
+  .indata_b_i(mu_reg),        // Input data -> operand a.
   .result_o(xmu_precomp)
 );
 
 multiplier_bs multiplier_approx(
   .clk_i(clk_i),             // Rising edge active clk.
   .rst_ni(rst_ni),           // Active low reset.
-  .start_i(m_finish_d),        // Start signal.
+  .start_i(m_finish_d),      // Start signal.
   .busy_o(busy_a_o),         // Module busy.
   .finish_o(a_finish),       // Module finish.
-  .indata_a_i(result_p),    // Input data -> operand a.
+  .indata_a_i(result_p),     // Input data -> operand a.
   .indata_b_i(q_reg),        // Input data -> operand b.
   .result_o(qm_result)
 );

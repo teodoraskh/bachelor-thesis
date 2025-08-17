@@ -1,7 +1,7 @@
 import multiplier_pkg::*;
 module montgomery_pipelined (
-  input  logic                    CLK_pci_sys_clk_p,
-  input  logic                    CLK_pci_sys_clk_n,
+  input  logic                    CLK_pci_sys_clk_p, // Clocking wizard positive clock
+  input  logic                    CLK_pci_sys_clk_n, // Clocking wizard negative clock
   input  logic                    rst_ni,
   input  logic                    start_i,
   input  logic [DATA_LENGTH-1:0]  x_i,       // Input: the result of the multiplication (in Montgomery form)
@@ -147,6 +147,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
     m_rescaled_reg <= '0;
   end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 3]) begin
     m_rescaled_reg <= m_rescaled;
+  end else begin
+    m_rescaled_reg <= m_rescaled_reg;
   end
 end
 
@@ -165,10 +167,8 @@ end
 always_ff @(posedge clk_i or negedge rst_ni) begin
   if (!rst_ni) begin
     result_o <= 64'b0;
-  end else if (start_delayed[MULTIPLIER_DEPTH * 2 + 5]) begin
-    result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
   end else begin
-    result_o <= result_o;
+    result_o <= (res_reg >= q_reg) ? res_reg - q_reg : res_reg;
   end
 end
 

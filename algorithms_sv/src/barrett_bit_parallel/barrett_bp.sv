@@ -18,7 +18,6 @@ bp_multiplier_64x64 multiplier_precomp(
   .b(mu_i),          // Input data -> operand a.
   .product(xmu_precomp)
 );
-// assign xmu_precomp = x_i * mu_i;
 
 assign q_approx = xmu_precomp >> (2 * m_bl_i);
 
@@ -27,7 +26,6 @@ bp_multiplier_64x64 multiplier_approx(
   .b(m_i),          // Input data -> operand b.
   .product(qm_result)
 );
-// assign qm_result = q_approx * m_i;
 
 assign res_reg = x_i - qm_result;
 assign result_o = (res_reg >= m_i) ? (res_reg - m_i) : res_reg;
