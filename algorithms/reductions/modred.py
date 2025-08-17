@@ -81,8 +81,6 @@ class ShiftAddReduction(ModularReduction):
 
 
     def reduce(self, mult):
-      print(f"bitlength: {self.k}")
-      print(f"correction: {self.coeff}")
       remainder = np.object_(mult.copy())
       while np.any(remainder >= self.modulus):
         # mask gets least k bits, r >> k removes those k bits
@@ -90,9 +88,8 @@ class ShiftAddReduction(ModularReduction):
         lo = np.object_(remainder & self.mask)
         # Fold anything above 2^k using n
         remainder = np.object_(self.coeff * hi  + lo)
-      if np.any(remainder >= self.modulus):
-         print("t")
-         remainder[remainder>= self.modulus] -= self.modulus
+        while np.any(remainder >= self.modulus):
+          remainder[remainder>= self.modulus] -= self.modulus
       return remainder
 
 
