@@ -42,9 +42,9 @@ module barrett_bp_tb;
     assign indata_mu_i   = MU;
 
     initial begin
-    $display("\n=======================================");
+    $display("\n===========================================");
     $display("[%04t] > Start Barrett bit-parallel test", $time);
-    $display("=======================================\n");
+    $display("===========================================\n");
 
     clk_i     = 0;
     rst_ni    = 0;
@@ -89,9 +89,9 @@ module barrett_bp_tb;
         end
     end
 
-    $display("\n=======================================");
+    $display("\n===========================================");
     $display("[%04t] > Finish Barrett bit-parallel test", $time);
-    $display("=======================================\n");
+    $display("===========================================\n");
 
     #100;
     $finish;

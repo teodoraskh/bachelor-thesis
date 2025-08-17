@@ -41,9 +41,9 @@ module barrett_bs_tb;
     assign indata_mu_i = MU;
 
     initial begin
-        $display("\n=======================================");
+        $display("\n===========================================");
         $display("[%04t] > Start Barrett bit-serial test", $time);
-        $display("=======================================\n");
+        $display("===========================================\n");
 
         clk_i = 0;
         rst_ni = 0;
@@ -95,9 +95,9 @@ module barrett_bs_tb;
           end
         end
 
-        $display("\n=======================================");
+        $display("\n===========================================");
         $display("[%04t] > Finish Barrett bit-serial test", $time);
-        $display("=======================================\n");
+        $display("===========================================\n");
 
         #100;
         $display("[%0t] > Calling $finish", $time);

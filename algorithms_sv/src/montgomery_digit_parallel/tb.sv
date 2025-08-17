@@ -44,9 +44,9 @@ module montgomery_bp_tb;
 
   // Stimulus generation
   initial begin
-  $display("\n=======================================");
+  $display("\n==============================================");
   $display("[%04t] > Start Montgomery digit-parallel test", $time);
-  $display("=======================================\n");
+  $display("==============================================\n");
 
   clk_i     = 0;
   rst_ni    = 0;
@@ -91,9 +91,9 @@ module montgomery_bp_tb;
     end
   end
 
-  $display("\n=======================================");
+  $display("\n===============================================");
   $display("[%04t] > Finish Montgomery digit-parallel test", $time);
-  $display("=======================================\n");
+  $display("===============================================\n");
 
   #100;
   $finish;

@@ -40,9 +40,9 @@ module dilithium_tb;
   assign indata_m_i    = MOD;
 
   initial begin
-  $display("\n=======================================");
+  $display("\n===========================================");
   $display("[%04t] > Start precomputed Dilithium test", $time);
-  $display("=======================================\n");
+  $display("===========================================\n");
 
   clk_i     = 0;
   rst_ni    = 0;
@@ -87,9 +87,9 @@ module dilithium_tb;
       end
   end
 
-  $display("\n=======================================");
+  $display("\n===========================================");
   $display("[%04t] > Finish precomputed Dilithium test", $time);
-  $display("=======================================\n");
+  $display("===========================================\n");
 
   #100;
   $finish;

@@ -43,9 +43,9 @@ module montgomery_tb;
     assign indata_minv_i = MOD_INV;
 
     initial begin
-        $display("\n=======================================");
+        $display("\n===========================================");
         $display("[%04t] > Start Montgomery digit-serial test", $time);
-        $display("=======================================\n");
+        $display("===========================================\n");
 
         clk_i = 0;
         rst_ni = 0;
@@ -94,7 +94,7 @@ module montgomery_tb;
           end
         end
 
-        $display("\n===========================================");
+        $display("\n=============================================");
         $display("[%04t] > Finish Montgomery digit-serial test", $time);
         $display("=============================================\n");
 

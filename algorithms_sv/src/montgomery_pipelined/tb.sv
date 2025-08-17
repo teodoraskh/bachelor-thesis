@@ -112,7 +112,7 @@ module montgomery_tb;
         #1;
       end
 
-      $display("\n========================================");
+      $display("\n=========================================");
       $display("[%04t] > Finish Montgomery pipelined test", $time);
       $display("=========================================\n");
 
