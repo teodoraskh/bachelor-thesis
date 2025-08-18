@@ -73,8 +73,8 @@ module montgomery_tb;
             reference_o = (indata_x_i * indata_y_i) % indata_m_i;
             start_i = 1;
 
-            $display("[%04t] > Input data A  : %h", $time, indata_x_i);
-            $display("[%04t] > Input data B  : %h", $time, indata_y_mont_i);
+            $display("[%04t] > Input data X  : %h", $time, indata_x_i);
+            $display("[%04t] > Input data Y  : %h", $time, indata_y_mont_i);
 
             @(posedge clk_i);
             start_i = 1;
