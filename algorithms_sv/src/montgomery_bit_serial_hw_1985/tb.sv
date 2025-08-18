@@ -50,7 +50,7 @@ module montgomery_tb;
         rst_ni = 0;
         start_i = 0;
 
-        inp_file = $fopen("input_dilithium_mont.txt", "r");
+        inp_file = $fopen("dilithium_input.txt", "r");
         if (inp_file == 0) begin
             $display("ERROR: Failed to open file.");
             $finish;
