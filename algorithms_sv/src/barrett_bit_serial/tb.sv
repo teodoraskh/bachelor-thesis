@@ -65,16 +65,11 @@ module barrett_bs_tb;
 
         while (!$feof(inp_file)) begin
 
-          // Get x in Montgomery form
           $fscanf(inp_file, "%h", indata_x_i);
 
           if(indata_x_i != 0) begin
-            // reference_o = indata_x_i * indata_xm_i;
             reference_o = indata_x_i % indata_m_i;
-
-            // $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
-            // $display("[%04t] > Set indata_a_i: %h", $time, indata_x_i);
-            $display("[%04t] > Set indata_b_i: %h", $time, indata_x_i);
+            $display("[%04t] > Input data   :  %h", $time, indata_x_i);
 
             @(posedge clk_i);
             start_i = 1;

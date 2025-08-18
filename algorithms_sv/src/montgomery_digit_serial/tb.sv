@@ -73,7 +73,7 @@ module montgomery_tb;
           if(indata_x_i != 0) begin
             reference_o = indata_x_i % indata_m_i;
 
-            $display("[%04t] > Set indata_x_i: %h", $time, indata_xm_i);
+            $display("[%04t] > Input data    : %h", $time, indata_xm_i);
 
             @(posedge clk_i);
             start_i = 1;

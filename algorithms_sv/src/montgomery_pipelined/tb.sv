@@ -84,8 +84,7 @@ module montgomery_tb;
         reference_o[i] = indata_x % indata_q_i;
         start_i = 1;
 
-        $display("[%04t] > Set indata_x_i: %h", $time, indata_x_m);
-        $display("[%04t] > Set REF: %h", $time, reference_o[i]);
+        $display("[%04t] > Input data     : %h", $time, indata_x_m);
         $display("");
       end
 
@@ -100,8 +99,8 @@ module montgomery_tb;
       $display("[%04t] > Received finish signal", $time);
       #1;
       for(integer i = 0; i < NUM_DATA; i ++) begin
-        $display("[%04t] > OUT data : %h", $time, outdata_r_o);
-        $display("[%04t] > REF data : %h", $time, reference_o[i]);
+        $display("[%04t] > Received data  : %h", $time, outdata_r_o);
+        $display("[%04t] > Reference data : %h", $time, reference_o[i]);
         if (outdata_r_o == reference_o[i])
             $display("[%04t] > Data is VALID", $time);
         else

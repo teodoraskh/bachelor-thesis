@@ -28,16 +28,6 @@ module montgomery_tb;
         .valid_o  (finish_o)
     );
 
-    // multiplier_bs mult (
-        // .clk_i(clk_i),
-        // .rst_ni(rst_ni),
-        // .start_i(start_i),
-        // .indata_a_i(indata_x_i),
-        // .indata_b_i(indata_xm_i),
-        // .finish_o(finish_o),
-        // .result_o(outdata_r_o)
-    // );
-
     initial forever #5 clk_i = ~clk_i;
 
     initial begin
@@ -52,9 +42,9 @@ module montgomery_tb;
     assign indata_minv_i = MOD_INV;
 
     initial begin
-        $display("\n=======================================");
+        $display("\n===========================================");
         $display("[%04t] > Start Montgomery bit-serial test", $time);
-        $display("=======================================\n");
+        $display("===========================================\n");
 
         clk_i = 0;
         rst_ni = 0;
@@ -80,12 +70,9 @@ module montgomery_tb;
           $fscanf(inp_file, "%h %h", indata_x_i, indata_xm_i);
 
           if(indata_x_i != 0) begin
-            // reference_o = indata_x_i * indata_xm_i;
             reference_o = indata_x_i % indata_m_i;
 
-            // $display("[%04t] > Set indata_x_i: %h", $time, indata_x_i);
-            // $display("[%04t] > Set indata_a_i: %h", $time, indata_x_i);
-            $display("[%04t] > Set indata_b_i: %h", $time, indata_xm_i);
+            $display("[%04t] > Input data    : %h", $time, indata_xm_i);
 
             @(posedge clk_i);
             start_i = 1;
@@ -106,9 +93,9 @@ module montgomery_tb;
           end
         end
 
-        $display("\n=======================================");
+        $display("\n===========================================");
         $display("[%04t] > Finish Montgomery bit-serial test", $time);
-        $display("=======================================\n");
+        $display("===========================================\n");
 
         #100;
         $display("[%0t] > Calling $finish", $time);
